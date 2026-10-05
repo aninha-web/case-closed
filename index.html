@@ -182,6 +182,35 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .season .seen { flex: none; font-size: 12px; font-weight: 600; color: var(--accent); }
 .season input:not(:checked) ~ .seen { visibility: hidden; }
 
+/* actors */
+.rows { display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); }
+.arow { display: flex; align-items: center; gap: 14px; min-height: 84px; padding: 14px 12px 14px 16px; color: var(--text); text-decoration: none; }
+.arow:hover { color: var(--text); }
+.arow + .arow { border-top: 1px solid var(--line); }
+.arow > svg { color: var(--muted); }
+.arow-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.arow-txt b { font-size: 16px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }
+.arow-txt small { font-size: 12px; line-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.track.thin, .track.thin i { height: 4px; }
+.avatar { flex: none; }
+.avatar.big { width: 88px; height: 88px; border-radius: 44px; font-size: 24px; }
+a.person { text-decoration: none; }
+a.person:hover { color: var(--text); }
+.phero { display: flex; align-items: center; gap: 16px; padding-block: 4px 20px; }
+.phero-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.phero-info h1 { font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; text-wrap: balance; }
+.follow[aria-pressed="false"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.follow[aria-pressed="false"] svg { stroke-width: 2.5; }
+.pchips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.results.add button { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+.results.add button > span:first-child { display: flex; flex-direction: column; min-width: 0; }
+.results .act { flex: none; font-size: 13px; font-weight: 600; color: var(--accent); }
+.seen-btn { display: flex; width: 100%; align-items: center; justify-content: center; gap: 10px; min-height: 52px; margin-bottom: 24px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent); color: var(--on-accent); font-size: 16px; font-weight: 600; }
+.seen-btn[aria-pressed="true"] { border-color: var(--line); background: var(--raised); color: var(--text); }
+.seen-btn svg { stroke: var(--accent); stroke-width: 2.5; }
+@media (max-width: 440px) { .tabs { gap: 13px; } .tab { font-size: 13px; gap: 5px; } }
+@media (max-width: 380px) { .tabs { gap: 9px; } .tab { font-size: 12.5px; gap: 4px; } }
+
 /* sheets */
 .sheet { position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--bg); padding-top: env(safe-area-inset-top, 0px); }
 .sheet-in { max-width: 720px; min-height: 100%; margin-inline: auto; display: flex; flex-direction: column; }
@@ -239,10 +268,11 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
   <div class="sticky">
     <div class="searchrow">
       <label class="search">
-        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <svg id="q-icon-search" class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <svg id="q-icon-add" class="i" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--accent)" hidden><path d="M12 5v14M5 12h14"></path></svg>
         <input id="q" type="search" placeholder="Search series or actor" aria-label="Search series or actor" autocomplete="off" enterkeyhint="search">
       </label>
-      <a class="filter-btn" href="#/filters">
+      <a id="filter-btn" class="filter-btn" href="#/filters">
         <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
         Filters
         <span id="filter-count" class="badge" hidden></span>
@@ -252,11 +282,14 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
   </div>
   <div id="under" class="under"></div>
   <div id="grid" class="grid"></div>
+  <div id="actors" hidden></div>
   <div id="list-state"></div>
   <div id="sentinel"></div>
 </main>
 
 <main id="view-show" class="wrap narrow" hidden></main>
+<main id="view-person" class="wrap narrow" hidden></main>
+<main id="view-film" class="wrap narrow" hidden></main>
 
 <div id="sheet-filters" class="sheet" hidden></div>
 <div id="sheet-settings" class="sheet" hidden></div>
@@ -269,7 +302,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 /* ---------- constants ---------- */
 const API = 'https://api.themoviedb.org/3';
 const IMG = 'https://image.tmdb.org/t/p/';
-const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1' };
+const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1', people: 'cc.people', films: 'cc.films', credits: 'cc.credits' };
 const META_TTL = 60 * 24 * 3600 * 1000;
 const FIRST_YEAR = 1990;
 
@@ -307,14 +340,16 @@ const SEASONS = [
 ];
 const RATINGS = [{ v: null, label: 'Any' }, { v: 7, label: '7 or more' }, { v: 8, label: '8 or more' }];
 const DEFAULT_FILTERS = { sort: 'popular', actor: null, creator: null, genres: ['crime'], focus: [], decade: null, country: null, network: null, seasons: null, rating: null, canceled: true, unscripted: false };
-const TABS = [['all', 'All'], ['watchlist', 'Watchlist'], ['watching', 'Watching'], ['completed', 'Completed']];
+const TABS = [['all', 'All'], ['watchlist', 'Watchlist'], ['watching', 'Watching'], ['completed', 'Completed'], ['actors', 'Actors']];
 const TILES = ['#1F3350', '#17434A', '#4A3A1C', '#5A2328', '#2F3F2A', '#5C3A1E', '#2B2F45', '#4E1F2B', '#1F4035', '#3A2F55', '#3B3F47', '#25404F'];
 
 const ICON = {
   back: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>',
   close: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
   check: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>',
-  mark: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"></path></svg>'
+  mark: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"></path></svg>',
+  plus: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>',
+  chev: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>'
 };
 
 /* ---------- helpers ---------- */
@@ -379,9 +414,34 @@ function cleanLib(raw) {
   return out;
 }
 
+function cleanPeople(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const k of Object.keys(raw)) {
+    const e = raw[k];
+    const id = Number(e && e.id);
+    if (!id || !e.name) continue;
+    out[id] = { id, name: String(e.name), p: typeof e.p === 'string' && e.p ? e.p : null, added: Number(e.added) || Date.now() };
+  }
+  return out;
+}
+function cleanFilms(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const k of Object.keys(raw)) {
+    const e = raw[k];
+    const id = Number(e && e.id);
+    if (!id) continue;
+    out[id] = { id, n: String(e.n || 'Untitled'), y: Number(e.y) || null, p: typeof e.p === 'string' && e.p ? e.p : null, u: Number(e.u) || Date.now() };
+  }
+  return out;
+}
+
 const S = {
   key: store.get(LS.key, ''),
   lib: cleanLib(store.get(LS.lib, {})),
+  people: cleanPeople(store.get(LS.people, {})),
+  films: cleanFilms(store.get(LS.films, {})),
   filters: cleanFilters({ sort: (store.get(LS.filters, null) || {}).sort }),
   tab: 'all',
   q: '',
@@ -425,7 +485,7 @@ async function tmdb(path, params, keyOverride) {
 function errorText(err) {
   if (err && err.kind === 'network') return "Can't reach TMDB. Check your connection and try again.";
   if (err && err.kind === 'auth') return 'TMDB rejected the key. Check it in Settings.';
-  if (err && err.kind === 'notfound') return "TMDB doesn't have this series any more.";
+  if (err && err.kind === 'notfound') return "TMDB doesn't have this page any more.";
   if (err && err.kind === 'http') return 'TMDB answered with an error (' + err.status + '). Try again in a moment.';
   return 'Something went wrong while loading. Try again.';
 }
@@ -577,6 +637,75 @@ function tidyEntry(id) {
   if (e && !e.want && !e.seen.length) delete S.lib[id];
 }
 
+/* ---------- people and films ---------- */
+const PERSON_TTL = 7 * 24 * 3600 * 1000;
+const personMem = new Map();
+const personJobs = new Map();
+const personHints = new Map();
+const filmMem = new Map();
+{
+  const saved = store.get(LS.credits, {});
+  if (saved && typeof saved === 'object') {
+    for (const id of Object.keys(S.people)) {
+      const c = saved[id];
+      if (c && Array.isArray(c.items)) personMem.set(Number(id), { id: Number(id), name: S.people[id].name, p: S.people[id].p, items: c.items, t: Number(c.t) || 0 });
+    }
+  }
+}
+const storageFull = () => toast("Couldn't save on this device. Storage may be full or blocked.");
+function savePeople() { if (!store.set(LS.people, S.people)) storageFull(); }
+function saveFilms() { if (!store.set(LS.films, S.films)) storageFull(); }
+function saveCredits() {
+  const out = {};
+  for (const id of Object.keys(S.people)) { const r = personMem.get(Number(id)); if (r) out[id] = { t: r.t, items: r.items }; }
+  store.set(LS.credits, out);
+}
+/* acting credits only: released films and series, without talk shows, news or appearances as themselves */
+function tidyCredits(raw) {
+  const today = new Date().toISOString().slice(0, 10);
+  const map = new Map();
+  for (const c of (raw || [])) {
+    const kind = c.media_type === 'movie' ? 'm' : c.media_type === 'tv' ? 't' : '';
+    if (!kind || c.adult) continue;
+    const date = kind === 'm' ? c.release_date : c.first_air_date;
+    if (!date || date > today) continue;
+    if (kind === 't' && (c.genre_ids || []).some((id) => NEVER_GENRES.includes(id))) continue;
+    const self = /\b(self|himself|herself|themselves)\b/i.test(c.character || '');
+    const key = kind + c.id;
+    const prev = map.get(key);
+    if (prev) { if (!self) prev.self = false; continue; }
+    map.set(key, { k: kind, id: c.id, n: (kind === 'm' ? c.title : c.name) || 'Untitled', d: date, p: c.poster_path || null, self: self });
+  }
+  return [...map.values()].filter((x) => !x.self).map((x) => ({ k: x.k, id: x.id, n: x.n, d: x.d, p: x.p })).sort((a, b) => b.d.localeCompare(a.d));
+}
+function getPerson(id, force) {
+  const mem = personMem.get(id);
+  if (mem && !force) return Promise.resolve(mem);
+  if (personJobs.has(id)) return personJobs.get(id);
+  const job = tmdb('/person/' + id, { language: 'en-US', append_to_response: 'combined_credits' })
+    .then((d) => {
+      const rec = { id: id, name: d.name || 'Unknown', p: d.profile_path || null, items: tidyCredits((d.combined_credits || {}).cast), t: Date.now() };
+      personMem.set(id, rec);
+      if (S.people[id]) { S.people[id].name = rec.name; S.people[id].p = rec.p; savePeople(); saveCredits(); }
+      return rec;
+    })
+    .finally(() => personJobs.delete(id));
+  personJobs.set(id, job);
+  return job;
+}
+const seenItem = (it) => (it.k === 'm' ? !!S.films[it.id] : statusOf(S.lib[it.id]) === 'completed');
+function getFilm(id) {
+  if (filmMem.has(id)) return Promise.resolve(filmMem.get(id));
+  return tmdb('/movie/' + id, { language: 'en-US', append_to_response: 'credits' }).then((d) => { filmMem.set(id, d); return d; });
+}
+function avatarHTML(path, name, big) {
+  return '<span class="avatar' + (big ? ' big' : '') + '">' + (path ? '<img src="' + IMG + 'w185' + esc(path) + '" alt="" loading="lazy" data-name="' + esc(name) + '">' : esc(initials(name))) + '</span>';
+}
+function personLinkHTML(p) {
+  personHints.set(p.id, { name: p.name, p: p.profile_path || null });
+  return '<a class="person" href="#/person/' + p.id + '">' + avatarHTML(p.profile_path, p.name) + '<span>' + esc(p.name) + '</span></a>';
+}
+
 /* ---------- rendering: cards ---------- */
 function posterHTML(path, name, id) {
   const tile = TILES[Math.abs(Number(id) || 0) % TILES.length];
@@ -597,16 +726,23 @@ function cardHTML(m) {
 }
 /* marks each cover from the library: faded when completed (All tab only), a progress bar while watching */
 function syncCards() {
-  document.querySelectorAll('#grid .card[data-id]').forEach((card) => {
-    const e = S.lib[Number(card.dataset.id)];
-    const st = statusOf(e);
-    card.classList.toggle('done', st === 'completed' && S.tab === 'all');
+  document.querySelectorAll('.grid .card[data-id], .grid .card[data-film]').forEach((card) => {
+    let done = false, pct = 0;
+    if (card.dataset.film) done = !!S.films[card.dataset.film];
+    else {
+      const e = S.lib[Number(card.dataset.id)];
+      const st = statusOf(e);
+      const ownList = !!card.closest('#grid') && S.tab !== 'all';
+      done = st === 'completed' && !ownList;
+      if (st === 'watching' && e.s > 0) pct = Math.max(8, Math.round((e.seen.length / e.s) * 100));
+    }
+    card.classList.toggle('done', done);
     const poster = card.querySelector('.poster');
     if (!poster) return;
     let bar = poster.querySelector('.bar');
-    if (st === 'watching' && e.s > 0) {
+    if (pct) {
       if (!bar) { poster.insertAdjacentHTML('beforeend', '<span class="bar"><i></i></span>'); bar = poster.querySelector('.bar'); }
-      bar.firstElementChild.style.width = Math.max(8, Math.round((e.seen.length / e.s) * 100)) + '%';
+      bar.firstElementChild.style.width = pct + '%';
     } else if (bar) bar.remove();
   });
 }
@@ -820,6 +956,7 @@ function paintUnder() {
   const badge = $('#filter-count');
   badge.hidden = !chips.length;
   badge.textContent = chips.length;
+  if (S.tab === 'actors') { el.innerHTML = actorsUnderHTML(); return; }
   let html = '';
   const b = browse;
   if (S.tab === 'all') {
@@ -896,11 +1033,78 @@ function paintLibrary() {
 }
 function paintTabs() {
   const c = libCounts();
-  $('#tabs').innerHTML = TABS.map((t) => '<button type="button" class="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + (t[0] !== 'all' ? '<span class="n">' + c[t[0]] + '</span>' : '') + '</button>').join('');
+  c.actors = Object.keys(S.people).length;
+  const tabs = $('#tabs');
+  tabs.innerHTML = TABS.map((t) => '<button type="button" class="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + (t[0] !== 'all' ? '<span class="n">' + c[t[0]] + '</span>' : '') + '</button>').join('');
+  const on = tabs.querySelector('[aria-pressed="true"]');
+  if (on) {
+    const left = on.offsetLeft - tabs.offsetLeft;
+    if (left + on.offsetWidth > tabs.scrollLeft + tabs.clientWidth) tabs.scrollLeft = left + on.offsetWidth - tabs.clientWidth;
+    else if (left < tabs.scrollLeft) tabs.scrollLeft = left;
+  }
+}
+function paintChrome() {
+  const actors = S.tab === 'actors';
+  $('#filter-btn').hidden = actors;
+  $('#q-icon-search').toggleAttribute('hidden', actors);
+  $('#q-icon-add').toggleAttribute('hidden', !actors);
+  const label = actors ? 'Add an actor by name' : 'Search series or actor';
+  $('#q').placeholder = label;
+  $('#q').setAttribute('aria-label', label);
+  $('#actors').hidden = !actors;
+  $('#grid').hidden = actors;
 }
 function refreshList() {
   paintTabs();
-  if (S.tab === 'all') startBrowse(); else paintLibrary();
+  paintChrome();
+  if (S.tab === 'all') startBrowse(); else if (S.tab === 'actors') paintActors(); else paintLibrary();
+}
+
+/* ---------- list: actors tab ---------- */
+const actorSug = { list: null, token: 0 };
+function actorSearch(v) {
+  const term = v.trim();
+  const token = ++actorSug.token;
+  if (term.length < 2) { actorSug.list = null; paintUnder(); return; }
+  tmdb('/search/person', { query: term, page: 1, language: 'en-US', include_adult: 'false' })
+    .then((r) => {
+      if (token !== actorSug.token) return;
+      actorSug.list = (r.results || []).filter((p) => p.name).slice(0, 6).map((p) => ({ id: p.id, name: p.name, p: p.profile_path || '', dept: p.known_for_department || '' }));
+      paintUnder();
+    })
+    .catch(() => { if (token === actorSug.token) { actorSug.list = []; paintUnder(); } });
+}
+function actorsUnderHTML() {
+  let html = '';
+  if (S.q.trim().length >= 2 && actorSug.list) {
+    html += '<div class="results add">' + (actorSug.list.length
+      ? actorSug.list.map((p) => '<button type="button" data-follow="' + p.id + '" data-name="' + esc(p.name) + '" data-profile="' + esc(p.p) + '"><span><span>' + esc(p.name) + '</span><small>' + esc(p.dept === 'Acting' ? 'Actor' : (p.dept || 'Crew')) + '</small></span><span class="act">' + (S.people[p.id] ? 'Following' : 'Add') + '</span></button>').join('')
+      : '<button type="button" disabled><span>No one found</span></button>') + '</div>';
+  }
+  const n = Object.keys(S.people).length;
+  if (n) html += '<p class="result-line">Following ' + plural(n, 'actor') + '</p>';
+  return html;
+}
+function actorRowHTML(p) {
+  const rec = personMem.get(p.id);
+  let meta = 'Titles load when you are online', pct = 0;
+  if (rec) {
+    const seen = rec.items.filter(seenItem).length;
+    meta = seen + ' of ' + rec.items.length + ' seen';
+    pct = rec.items.length ? Math.round((seen / rec.items.length) * 100) : 0;
+  }
+  return '<a class="arow" href="#/person/' + p.id + '">' + avatarHTML(p.p, p.name) + '<span class="arow-txt"><b>' + esc(p.name) + '</b><small>' + esc(meta) + '</small><span class="track thin"><i style="width:' + pct + '%"></i></span></span>' + ICON.chev + '</a>';
+}
+function paintActors() {
+  $('#grid').innerHTML = '';
+  paintUnder();
+  const people = Object.keys(S.people).map((id) => S.people[id]).sort((a, b) => b.added - a.added);
+  $('#actors').innerHTML = people.length ? '<div class="rows">' + people.map(actorRowHTML).join('') + '</div>' : '';
+  $('#list-state').innerHTML = people.length ? '' : '<div class="state"><strong>No actors yet</strong><p>Type a name in the field above to follow an actor. You get a page with all their films and series to tick off.</p></div>';
+  for (const p of people) {
+    if (personMem.has(p.id) || personJobs.has(p.id)) continue;
+    getPerson(p.id).then(() => { if (S.tab === 'actors' && current === 'list') paintActors(); }).catch(() => {});
+  }
 }
 
 /* ---------- series page ---------- */
@@ -963,9 +1167,8 @@ function paintShow(d) {
   if (d.offline) html += '<p class="note" style="margin-bottom:24px">You’re offline, so only your saved progress is shown.</p>';
   if (d.overview) html += '<section class="sec"><h2 class="h-sec">Overview</h2><p>' + esc(d.overview) + '</p></section>';
   if (cast.length || creators.length) {
-    html += '<section class="sec"><div class="sec-head"><h2 class="h-sec">Cast</h2><span class="note">Tap a name to see their series</span></div>';
-    if (cast.length) html += '<div class="cast">' + cast.map((p) => '<button type="button" class="person" data-person="' + p.id + '" data-name="' + esc(p.name) + '" data-dept="Acting"><span class="avatar">' +
-      (p.profile_path ? '<img src="' + IMG + 'w185' + esc(p.profile_path) + '" alt="" loading="lazy" data-name="' + esc(p.name) + '">' : esc(initials(p.name))) + '</span><span>' + esc(p.name) + '</span></button>').join('') + '</div>';
+    html += '<section class="sec"><div class="sec-head"><h2 class="h-sec">Cast</h2><span class="note">Tap a name to open their page</span></div>';
+    if (cast.length) html += '<div class="cast">' + cast.map(personLinkHTML).join('') + '</div>';
     if (creators.length) html += '<div class="created">Created by ' + creators.map((p) => '<button type="button" class="text-btn" data-person="' + p.id + '" data-name="' + esc(p.name) + '" data-dept="Creator">' + esc(p.name) + '</button>').join('') + '</div>';
     html += '</section>';
   }
@@ -1013,6 +1216,128 @@ function filterByPerson(id, name, dept) {
   listScroll = 0;
   if (current === 'list' && !openSheet) refreshList();
   else { pendingReload = true; location.hash = '#/'; }
+}
+
+/* ---------- actor page ---------- */
+let personToken = 0, personNow = null;
+const personFilter = {};
+function subShell(kind, id, inner) {
+  return '<div class="show-top"><a class="icon-btn" href="#/" data-back aria-label="Back">' + ICON.back + '</a><a class="ext" href="https://www.themoviedb.org/' + kind + '/' + id + '" target="_blank" rel="noopener">View on TMDB</a></div>' + inner;
+}
+function titleCardHTML(it) {
+  const y = yearOf(it.d);
+  const name = '<div class="cap-name">' + esc(it.n) + '</div>';
+  if (it.k === 'm') return '<a class="card" data-film="' + it.id + '" href="#/film/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + '<div class="cap">' + name + '<div class="cap-meta">' + y + ' · Film</div></div></a>';
+  const m = metaMem.get(it.id);
+  return '<a class="card" data-id="' + it.id + '" href="#/show/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + '<div class="cap">' + name + '<div class="cap-meta" data-cap="' + y + '">' + y + ' · ' + (m && m.s ? plural(m.s, 'season') : 'Series') + '</div></div></a>';
+}
+/* season counts are not part of an actor's credits, so they are looked up per series and filled in */
+function fillSeasons(rec) {
+  const token = personToken;
+  for (const it of rec.items) {
+    if (it.k !== 't' || metaMem.has(it.id)) continue;
+    getMeta(it.id).then((m) => {
+      if (token !== personToken || !m.s) return;
+      const cap = document.querySelector('#person-grid .card[data-id="' + it.id + '"] [data-cap]');
+      if (cap) cap.textContent = cap.dataset.cap + ' · ' + plural(m.s, 'season');
+    }).catch(() => {});
+  }
+}
+async function openPerson(id, back) {
+  const token = ++personToken;
+  const el = $('#view-person');
+  let rec = personMem.get(id);
+  if (rec) {
+    personNow = rec;
+    paintPerson(rec);
+    const y = back && scrollMem['#/person/' + id] ? scrollMem['#/person/' + id] : 0;
+    requestAnimationFrame(() => window.scrollTo(0, y));
+    if (Date.now() - rec.t > PERSON_TTL) getPerson(id, true).then((r) => { if (token === personToken && current === 'person') { personNow = r; paintPerson(r); } }).catch(() => {});
+    return;
+  }
+  const hint = S.people[id] || personHints.get(id);
+  personNow = null;
+  window.scrollTo(0, 0);
+  el.innerHTML = subShell('person', id, '<div class="phero">' + avatarHTML(hint && hint.p, hint ? hint.name : '', true) + '<div class="phero-info"><h1>' + esc(hint ? hint.name : 'Loading…') + '</h1><p class="note">Loading films and series…</p></div></div>');
+  try { rec = await getPerson(id); }
+  catch (err) {
+    if (token !== personToken) return;
+    el.innerHTML = subShell('person', id, '<div class="state"><strong>Couldn’t open this page</strong><p>' + esc(errorText(err)) + '</p><button type="button" class="btn ghost" data-act="reload-person" data-id="' + id + '">Try again</button></div>');
+    return;
+  }
+  if (token !== personToken) return;
+  personNow = rec;
+  paintPerson(rec);
+}
+function paintPerson(rec) {
+  const f = personFilter[rec.id] || 'all';
+  const total = rec.items.length;
+  const films = rec.items.filter((it) => it.k === 'm').length;
+  const seen = rec.items.filter(seenItem).length;
+  const shown = rec.items.filter((it) => f === 'all' || (f === 'films' ? it.k === 'm' : it.k === 't'));
+  const following = !!S.people[rec.id];
+  let html = '<div class="phero">' + avatarHTML(rec.p, rec.name, true) + '<div class="phero-info"><h1>' + esc(rec.name) + '</h1>' +
+    '<div class="facts"><div>' + plural(total, 'title') + ' · ' + plural(films, 'film') + ' · ' + (total - films) + ' series</div></div>' +
+    '<div class="want-row"><button type="button" class="want follow" id="follow" aria-pressed="' + following + '">' + (following ? ICON.check + 'Following' : ICON.plus + 'Follow') + '</button></div></div></div>';
+  html += '<div class="progress"><div class="progress-row"><b>Seen</b><span>' + seen + ' of ' + plural(total, 'title') + '</span></div><div class="track"><i style="width:' + (total ? Math.round((seen / total) * 100) : 0) + '%"></i></div></div>';
+  html += '<div class="pchips">' + [['all', 'All'], ['films', 'Films'], ['series', 'Series']].map((c) => '<button type="button" class="chip" data-pf="' + c[0] + '" aria-pressed="' + (f === c[0]) + '">' + c[1] + '</button>').join('') + '</div>';
+  html += shown.length
+    ? '<div class="grid" id="person-grid">' + shown.map(titleCardHTML).join('') + '</div>'
+    : '<div class="state"><strong>Nothing here</strong><p>' + (total ? 'No ' + (f === 'films' ? 'films' : 'series') + ' listed for this person.' : 'TMDB lists no released films or series for this person.') + '</p></div>';
+  $('#view-person').innerHTML = subShell('person', rec.id, html);
+  syncCards();
+  fillSeasons(rec);
+}
+
+/* ---------- film page ---------- */
+let filmToken = 0, filmNow = null;
+async function openFilm(id) {
+  const token = ++filmToken;
+  const el = $('#view-film');
+  const known = S.films[id];
+  filmNow = null;
+  el.innerHTML = subShell('movie', id, '<div class="hero"><div class="poster" style="--tile:' + TILES[id % TILES.length] + '"></div><div class="hero-info"><h1>' + esc(known ? known.n : 'Loading…') + '</h1><p class="note">Loading film details…</p></div></div>');
+  let d;
+  try { d = await getFilm(id); }
+  catch (err) {
+    if (token !== filmToken) return;
+    if (known) d = { id: id, title: known.n, release_date: known.y ? known.y + '-01-01' : '', poster_path: known.p, offline: true };
+    else { el.innerHTML = subShell('movie', id, '<div class="state"><strong>Couldn’t open this film</strong><p>' + esc(errorText(err)) + '</p><button type="button" class="btn ghost" data-act="reload-film" data-id="' + id + '">Try again</button></div>'); return; }
+  }
+  if (token !== filmToken) return;
+  filmNow = d;
+  paintFilm(d);
+}
+function paintFilm(d) {
+  const title = d.title || 'Untitled';
+  const y = yearOf(d.release_date);
+  const countries = (d.production_countries || []).slice(0, 2).map((c) => countryName(c.iso_3166_1)).join(', ');
+  const rt = Number(d.runtime) || 0;
+  const runtime = rt ? (rt >= 60 ? Math.floor(rt / 60) + 'h ' + (rt % 60) + 'm' : rt + 'm') : '';
+  const genres = (d.genres || []).slice(0, 3).map((g) => g.name).join(', ');
+  const credits = d.credits || {};
+  const directors = (credits.crew || []).filter((c) => c.job === 'Director').slice(0, 2).map((c) => c.name).join(', ');
+  const roles = (credits.cast || []).filter((c) => S.people[c.id] && c.character).slice(0, 2).map((c) => c.name + ' as ' + c.character);
+  const facts = [
+    [y, 'Film', countries].filter(Boolean).join(' · '),
+    [runtime, genres].filter(Boolean).join(' · '),
+    directors ? 'Directed by ' + directors : ''
+  ].concat(roles, [(d.vote_count || 0) >= 10 ? 'TMDB score ' + Number(d.vote_average).toFixed(1) : '']).filter(Boolean);
+  const cast = (credits.cast || []).slice().sort((a, z) => (a.order || 0) - (z.order || 0)).slice(0, 12);
+  let html = '<div class="hero">' + posterHTML(d.poster_path, title, d.id) + '<div class="hero-info"><h1>' + esc(title) + '</h1><div class="facts">' + facts.map((f) => '<div>' + esc(f) + '</div>').join('') + '</div></div></div>';
+  html += '<button type="button" class="seen-btn" id="film-seen" aria-pressed="false"></button>';
+  if (d.offline) html += '<p class="note" style="margin-bottom:24px">You’re offline, so only your saved progress is shown.</p>';
+  if (d.overview) html += '<section class="sec"><h2 class="h-sec">Overview</h2><p>' + esc(d.overview) + '</p></section>';
+  if (cast.length) html += '<section class="sec"><div class="sec-head"><h2 class="h-sec">Cast</h2><span class="note">Tap a name to open their page</span></div><div class="cast">' + cast.map(personLinkHTML).join('') + '</div></section>';
+  $('#view-film').innerHTML = subShell('movie', d.id, html);
+  paintFilmSeen(d);
+}
+function paintFilmSeen(d) {
+  const b = $('#film-seen');
+  if (!b) return;
+  const on = !!S.films[d.id];
+  b.setAttribute('aria-pressed', String(on));
+  b.innerHTML = on ? ICON.check + 'Seen' : 'Mark as seen';
 }
 
 /* ---------- filters sheet ---------- */
@@ -1100,7 +1425,7 @@ function paintSettings() {
   const masked = S.key ? S.key.slice(0, 4) + '…' + S.key.slice(-4) : '';
   $('#sheet-settings').innerHTML = '<div class="sheet-in"><div class="sheet-head"><a class="icon-btn" href="#/" data-back aria-label="Close settings">' + ICON.close + '</a><h1>Settings</h1></div><div class="sheet-body">' +
     (installEvent ? '<div class="group"><h2>Install</h2><p class="note">Add Case Closed to your home screen so it opens like an app.</p><div class="row"><button type="button" class="btn" data-act="install">Install app</button></div></div>' : '') +
-    '<div class="group"><h2>Your progress</h2><p class="note">' + total + ' series' + ' in your lists, saved on this device only. Download a backup now and then, and before clearing browser data or changing phones.</p>' +
+    '<div class="group"><h2>Your progress</h2><p class="note">' + total + ' series, ' + plural(Object.keys(S.films).length, 'film') + ' and ' + plural(Object.keys(S.people).length, 'actor') + ' saved on this device only. Download a backup now and then, and before clearing browser data or changing phones.</p>' +
       '<div class="row"><button type="button" class="btn ghost" data-act="export">Download backup</button><label class="btn ghost" for="import-file">Restore a backup</label><input id="import-file" type="file" accept="application/json,.json" hidden></div></div>' +
     '<div class="group"><label class="h" for="key-change">TMDB key</label><p class="note">Current key: ' + esc(masked) + '</p><input id="key-change" class="field" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste a new key">' +
       '<p id="key-err" class="err" hidden></p><div class="row"><button type="button" class="btn ghost" data-act="key-save">Save key</button></div></div>' +
@@ -1110,7 +1435,7 @@ function paintSettings() {
     '</div></div>';
 }
 function exportBackup() {
-  const data = JSON.stringify({ app: 'case-closed', version: 1, exported: new Date().toISOString(), lib: S.lib }, null, 1);
+  const data = JSON.stringify({ app: 'case-closed', version: 2, exported: new Date().toISOString(), lib: S.lib, films: S.films, people: S.people }, null, 1);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
   a.download = 'case-closed-backup-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -1123,13 +1448,16 @@ function exportBackup() {
 function importBackup(file) {
   const reader = new FileReader();
   reader.onload = () => {
-    let lib = null;
-    try { const j = JSON.parse(String(reader.result)); lib = cleanLib(j && j.lib); } catch (e) { lib = null; }
-    const n = lib ? Object.keys(lib).length : 0;
-    if (!n) { toast("That file isn't a Case Closed backup."); return; }
-    if (!window.confirm('Replace the progress on this device with the backup (' + n + ' series)?')) return;
-    S.lib = lib;
-    saveLib();
+    let j = null;
+    try { j = JSON.parse(String(reader.result)); } catch (e) { j = null; }
+    if (!j || j.app !== 'case-closed' || !j.lib || typeof j.lib !== 'object') { toast("That file isn't a Case Closed backup."); return; }
+    const lib = cleanLib(j.lib), films = cleanFilms(j.films), people = cleanPeople(j.people);
+    const what = Object.keys(lib).length + ' series, ' + plural(Object.keys(films).length, 'film') + ', ' + plural(Object.keys(people).length, 'actor');
+    if (!window.confirm('Replace the progress on this device with the backup (' + what + ')?')) return;
+    S.lib = lib; S.films = films; S.people = people;
+    saveLib(); saveFilms(); savePeople();
+    for (const id of [...personMem.keys()]) if (!S.people[id]) personMem.delete(id);
+    saveCredits();
     pendingReload = true;
     paintSettings();
     toast('Backup restored');
@@ -1141,7 +1469,7 @@ async function checkKey(key) {
 }
 
 /* ---------- views and routing ---------- */
-const views = { setup: $('#view-setup'), list: $('#view-list'), show: $('#view-show') };
+const views = { setup: $('#view-setup'), list: $('#view-list'), show: $('#view-show'), person: $('#view-person'), film: $('#view-film') };
 const sheets = { filters: $('#sheet-filters'), settings: $('#sheet-settings') };
 let current = null, openSheet = null, listScroll = 0, listReady = false, pendingReload = false;
 function showView(name, sheet) {
@@ -1150,20 +1478,24 @@ function showView(name, sheet) {
   for (const k of Object.keys(sheets)) sheets[k].hidden = k !== sheet;
   document.body.classList.toggle('locked', !!sheet);
   const back = name === 'list' && current !== 'list';
-  if (name === 'show') window.scrollTo(0, 0);
+  if (name === 'show' || name === 'film') window.scrollTo(0, 0);
   current = name;
   openSheet = sheet || null;
   if (back) requestAnimationFrame(() => window.scrollTo(0, listScroll));
 }
 function ensureList() {
   if (!listReady || pendingReload) { listReady = true; pendingReload = false; listScroll = 0; window.scrollTo(0, 0); refreshList(); }
-  else { paintTabs(); if (S.tab !== 'all') paintLibrary(); else syncCards(); }
+  else { paintTabs(); if (S.tab === 'all') syncCards(); else if (S.tab === 'actors') paintActors(); else paintLibrary(); }
 }
-function route() {
+function route(back) {
   if (!S.key) { showView('setup'); return; }
   const h = location.hash || '#/';
   const m = h.match(/^#\/show\/(\d+)$/);
   if (m) { showView('show'); openShow(Number(m[1])); return; }
+  const mp = h.match(/^#\/person\/(\d+)$/);
+  if (mp) { showView('person'); openPerson(Number(mp[1]), back); return; }
+  const mf = h.match(/^#\/film\/(\d+)$/);
+  if (mf) { showView('film'); openFilm(Number(mf[1])); return; }
   if (h === '#/filters') { showView('list', 'filters'); openFilters(); if (!listReady) ensureList(); return; }
   if (h === '#/settings') { showView('list', 'settings'); paintSettings(); if (!listReady) ensureList(); return; }
   showView('list');
@@ -1171,10 +1503,15 @@ function route() {
 }
 try { history.scrollRestoration = 'manual'; } catch (e) { /* older browsers */ }
 const stack = [location.hash || '#/'];
+const scrollMem = {};
+let lastHash = location.hash || '#/';
 window.addEventListener('hashchange', () => {
   const h = location.hash || '#/';
-  if (stack.length > 1 && stack[stack.length - 2] === h) stack.pop(); else stack.push(h);
-  route();
+  if (current === 'person') scrollMem[lastHash] = window.scrollY;
+  const back = stack.length > 1 && stack[stack.length - 2] === h;
+  if (back) stack.pop(); else stack.push(h);
+  lastHash = h;
+  route(back);
 });
 function goBack() {
   if (stack.length > 1) history.back(); else location.hash = '#/';
@@ -1206,7 +1543,7 @@ $('#q').addEventListener('input', (ev) => {
   qTimer = setTimeout(() => {
     S.q = v;
     if (!v.trim()) S.searchAll = false;
-    if (S.tab === 'all') { window.scrollTo(0, 0); startBrowse(); } else paintLibrary();
+    if (S.tab === 'all') { window.scrollTo(0, 0); startBrowse(); } else if (S.tab === 'actors') actorSearch(v); else paintLibrary();
   }, 350);
 });
 $('#q').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') ev.target.blur(); });
@@ -1217,6 +1554,7 @@ document.addEventListener('click', (ev) => {
   let el;
   if ((el = t.closest('[data-back]'))) { ev.preventDefault(); goBack(); return; }
   if ((el = t.closest('[data-tab]'))) {
+    if ((el.dataset.tab === 'actors') !== (S.tab === 'actors')) { clearTimeout(qTimer); S.q = ''; $('#q').value = ''; S.searchAll = false; actorSug.list = null; actorSug.token++; }
     S.tab = el.dataset.tab;
     window.scrollTo(0, 0);
     refreshList();
@@ -1239,6 +1577,34 @@ document.addEventListener('click', (ev) => {
     setSeen(showing, nums, !(info.total && info.seen >= info.total));
     return;
   }
+  if ((el = t.closest('[data-follow]'))) {
+    const id = Number(el.dataset.follow);
+    if (!S.people[id]) {
+      S.people[id] = { id: id, name: el.dataset.name, p: el.dataset.profile || null, added: Date.now() };
+      savePeople();
+      toast('Following ' + el.dataset.name);
+    }
+    clearTimeout(qTimer); S.q = ''; $('#q').value = ''; actorSug.list = null; actorSug.token++;
+    paintTabs(); paintActors();
+    return;
+  }
+  if (t.closest('#follow') && personNow) {
+    const id = personNow.id;
+    if (S.people[id]) delete S.people[id];
+    else S.people[id] = { id: id, name: personNow.name, p: personNow.p, added: Date.now() };
+    savePeople(); saveCredits();
+    paintPerson(personNow);
+    return;
+  }
+  if ((el = t.closest('[data-pf]')) && personNow) { personFilter[personNow.id] = el.dataset.pf; paintPerson(personNow); return; }
+  if (t.closest('#film-seen') && filmNow) {
+    const id = filmNow.id;
+    if (S.films[id]) delete S.films[id];
+    else S.films[id] = { id: id, n: filmNow.title || 'Untitled', y: yearOf(filmNow.release_date), p: filmNow.poster_path || null, u: Date.now() };
+    saveFilms();
+    paintFilmSeen(filmNow);
+    return;
+  }
   if ((el = t.closest('[data-act]'))) {
     const act = el.dataset.act;
     if (act === 'retry' || act === 'more') { if (browse) { browse.error = null; browse.stalled = false; } loadMore(); }
@@ -1246,6 +1612,8 @@ document.addEventListener('click', (ev) => {
     else if (act === 'search-scope') { S.searchAll = false; window.scrollTo(0, 0); startBrowse(); }
     else if (act === 'reset-filters') { S.filters = clone(DEFAULT_FILTERS); saveFilters(); refreshList(); }
     else if (act === 'reload-show' && showing) openShow(showing.id);
+    else if (act === 'reload-person') openPerson(Number(el.dataset.id));
+    else if (act === 'reload-film') openFilm(Number(el.dataset.id));
     else if (act === 'filters-reset') { draft = clone(DEFAULT_FILTERS); paintFilters(); }
     else if (act === 'filters-apply') {
       S.filters = cleanFilters(draft);
@@ -1256,7 +1624,7 @@ document.addEventListener('click', (ev) => {
     }
     else if (act === 'export') exportBackup();
     else if (act === 'install' && installEvent) { installEvent.prompt(); installEvent = null; paintSettings(); }
-    else if (act === 'clear-cache') { metaMem.clear(); fullMem.clear(); store.del(LS.meta); store.del(LS.kw); store.del(LS.nets); S.focusMap = null; S.badNets = null; browse = null; pendingReload = true; toast('Saved series data cleared'); }
+    else if (act === 'clear-cache') { metaMem.clear(); fullMem.clear(); personMem.clear(); filmMem.clear(); store.del(LS.credits); store.del(LS.meta); store.del(LS.kw); store.del(LS.nets); S.focusMap = null; S.badNets = null; browse = null; pendingReload = true; toast('Saved series data cleared'); }
     else if (act === 'key-save') {
       const input = $('#key-change'), err = $('#key-err');
       const key = input.value.trim();
