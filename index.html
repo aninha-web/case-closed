@@ -1,0 +1,1277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Case Closed</title>
+<meta name="description" content="A personal tracker for finished English-language crime, detective and investigation series.">
+<meta name="theme-color" content="#0E1014">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+/* Layout: one phone-first column. A sticky search-and-tabs block sits over a poster grid;
+   series pages and the two sheets (filters, settings) reuse the same narrow column. */
+:root {
+  color-scheme: dark;
+  --bg: #0E1014;
+  --surface: #171A21;
+  --raised: #1F232C;
+  --line: #2A2F3A;
+  --edge: #5C6577;
+  --text: #ECEEF2;
+  --text-2: #C9CED8;
+  --muted: #9AA1AE;
+  --accent: #F2B632;
+  --accent-hi: #FFD067;
+  --on-accent: #14110A;
+  --danger: #FF9B8A;
+  --display: 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  --body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --gutter: 16px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+body.locked { overflow: hidden; }
+[hidden] { display: none !important; }
+h1, h2, p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent); }
+a:hover { color: var(--accent-hi); }
+:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; }
+svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.wrap { max-width: 1040px; margin-inline: auto; padding-inline: var(--gutter); padding-block: 0 56px; }
+.narrow { max-width: 720px; }
+
+/* shared controls */
+.icon-btn { flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 22px; background: none; color: var(--text); text-decoration: none; }
+.icon-btn:hover { background: var(--surface); color: var(--text); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none; }
+.btn:hover { background: var(--accent-hi); border-color: var(--accent-hi); color: var(--on-accent); }
+.btn.ghost { background: transparent; border-color: var(--edge); color: var(--text); }
+.btn.ghost:hover { background: var(--surface); }
+.btn.block { display: flex; width: 100%; }
+.btn[disabled] { opacity: .6; cursor: default; }
+.text-btn { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 14px; }
+.text-btn:hover { color: var(--accent-hi); }
+.field { width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 15px; }
+.field::placeholder, .search input::placeholder { color: var(--muted); }
+.chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 22px; background: transparent; color: #D5D9E1; font-size: 14px; font-weight: 500; }
+.chip[aria-pressed="true"], .chip.on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.chip svg { width: 14px; height: 14px; stroke-width: 3; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips.even { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.chips.even .chip { padding: 0 4px; }
+.h-sec { font-family: var(--display); font-weight: 600; font-size: 20px; line-height: 22px; text-transform: uppercase; letter-spacing: .05em; text-wrap: balance; }
+.note { font-size: 13px; line-height: 19px; color: var(--muted); }
+.err { color: var(--danger); font-size: 14px; }
+
+/* setup */
+.setup { display: flex; flex-direction: column; gap: 22px; padding-block: 40px 56px; max-width: 520px; }
+.logo { font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1; text-transform: uppercase; letter-spacing: .03em; }
+.logo span { color: var(--accent); }
+.setup .logo { font-size: 44px; }
+.setup ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: var(--text-2); }
+.setup form { display: flex; flex-direction: column; gap: 10px; }
+.setup label { font-weight: 600; font-size: 14px; }
+
+/* list */
+.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-block: 20px 12px; }
+.top p { margin-top: 6px; font-size: 13px; line-height: 18px; color: var(--muted); }
+.sticky { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); padding-top: 8px; background: var(--bg); }
+.searchrow { display: flex; gap: 8px; }
+.search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); }
+.search:focus-within { border-color: var(--edge); }
+.search input { flex: 1; min-width: 0; height: 44px; padding: 0; border: 0; background: transparent; color: var(--text); font-size: 15px; outline: none; }
+.filter-btn { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px; border: 1px solid var(--edge); border-radius: 10px; background: transparent; color: var(--text); font-size: 14px; font-weight: 600; text-decoration: none; }
+.filter-btn:hover { background: var(--surface); color: var(--text); }
+.badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 600; line-height: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+.tabs { display: flex; gap: 18px; margin-top: 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 44px; margin-bottom: -1px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font-size: 14px; font-weight: 600; }
+.tab[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.tab .n { font-size: 12px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+.under { display: flex; flex-direction: column; gap: 12px; padding-block: 14px 16px; }
+.under:empty { padding-block: 8px; }
+.active { display: flex; flex-wrap: wrap; gap: 8px; }
+.active .chip { min-height: 36px; padding: 0 10px 0 14px; font-size: 13px; position: relative; }
+.active .chip::after { content: ''; position: absolute; inset: -4px 0; }
+.people { display: flex; flex-direction: column; gap: 8px; }
+.people .chips { flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); scrollbar-width: none; }
+.people .chip { flex: none; flex-direction: column; align-items: flex-start; gap: 0; padding: 4px 16px; border-radius: 12px; }
+.people .chip small { font-size: 11px; color: var(--muted); font-weight: 400; }
+.result-line { font-size: 13px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 20px 12px; }
+@media (min-width: 720px) { .grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 24px 16px; } }
+.card { display: flex; flex-direction: column; gap: 8px; min-width: 0; color: var(--text); text-decoration: none; }
+.card:hover { color: var(--text); }
+.poster { position: relative; aspect-ratio: 2 / 3; max-width: 100%; border-radius: 6px; overflow: hidden; background: var(--tile, var(--raised)); display: flex; align-items: flex-end; }
+.poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.poster-title { padding: 8px; font-family: var(--display); font-weight: 600; font-size: 17px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; color: #fff; }
+.cap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cap-name { font-size: 13px; line-height: 18px; font-weight: 600; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.cap-meta { font-size: 12px; line-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.skel .poster, .skel .bar { background: var(--surface); animation: pulse 1.4s ease-in-out infinite; }
+.skel .bar { height: 12px; border-radius: 4px; width: 80%; }
+.skel .bar.short { width: 55%; }
+@keyframes pulse { 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .skel .poster, .skel .bar { animation: none; } }
+.state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-block: 28px 8px; text-align: center; color: var(--muted); font-size: 14px; }
+.state strong { color: var(--text); font-size: 16px; font-weight: 600; }
+.state p { max-width: 42ch; }
+.state code { display: block; max-width: 100%; padding: 8px 10px; border-radius: 8px; background: var(--surface); color: var(--text-2); font-size: 11px; line-height: 16px; overflow-wrap: anywhere; text-align: left; }
+#sentinel { height: 1px; }
+
+/* series page */
+.show-top { display: flex; align-items: center; justify-content: space-between; height: 56px; margin-inline: -10px; }
+.show-top a.ext { min-height: 44px; display: inline-flex; align-items: center; padding: 0 10px; font-size: 13px; font-weight: 600; }
+.hero { display: flex; gap: 16px; padding-block: 4px 20px; }
+.hero .poster { flex: none; width: 120px; height: 180px; border-radius: 8px; }
+.hero .poster-title { padding: 10px; font-size: 22px; }
+.hero-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.hero-info h1 { font-family: var(--display); font-weight: 700; font-size: 36px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; text-wrap: balance; }
+.facts { display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 20px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.want-row { margin-top: auto; display: flex; }
+.want { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 22px; background: transparent; color: var(--text); font-size: 14px; font-weight: 600; }
+.want[aria-pressed="true"] { border-color: var(--line); background: var(--raised); }
+.want[aria-pressed="true"] svg { stroke: var(--accent); stroke-width: 2.5; }
+.want svg { width: 16px; height: 16px; }
+.progress { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; padding: 14px 16px; border-radius: 10px; background: var(--surface); }
+.progress-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13px; line-height: 20px; }
+.progress-row b { font-weight: 600; color: var(--accent); }
+.progress-row span { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.track { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.track i { display: block; height: 6px; background: var(--accent); transition: width .2s ease; }
+@media (prefers-reduced-motion: reduce) { .track i { transition: none; } }
+.sec { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; }
+.sec p { font-size: 14px; line-height: 22px; color: var(--text-2); max-width: 65ch; }
+.sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.sec-head .note { font-size: 12px; }
+.cast { display: flex; gap: 8px; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); overflow-x: auto; scrollbar-width: none; }
+.cast::-webkit-scrollbar, .people .chips::-webkit-scrollbar { display: none; }
+.person { flex: none; width: 76px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: var(--text); font-size: 12px; line-height: 16px; text-align: center; }
+.avatar { width: 56px; height: 56px; border-radius: 28px; overflow: hidden; background: var(--raised); border: 1px solid #3A4150; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: var(--text-2); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.created { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; font-size: 13px; color: var(--muted); }
+.seasons { display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); }
+.season { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 8px 16px; cursor: pointer; }
+.season + .season { border-top: 1px solid var(--line); }
+.season input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.season .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.season .txt b { font-size: 15px; line-height: 20px; font-weight: 600; }
+.season .txt small { font-size: 12px; line-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.season .seen { flex: none; font-size: 12px; font-weight: 600; color: var(--accent); }
+.season input:not(:checked) ~ .seen { visibility: hidden; }
+
+/* sheets */
+.sheet { position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--bg); padding-top: env(safe-area-inset-top, 0px); }
+.sheet-in { max-width: 720px; min-height: 100%; margin-inline: auto; display: flex; flex-direction: column; }
+.sheet-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 4px; height: 56px; padding: 0 12px 0 6px; background: var(--bg); }
+.sheet-head h1 { flex: 1; font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1; text-transform: uppercase; letter-spacing: .03em; }
+.sheet-body { display: flex; flex-direction: column; gap: 24px; padding: 8px var(--gutter) 24px; }
+.group { display: flex; flex-direction: column; gap: 10px; }
+.group > h2, .group > label.h { font-family: var(--display); font-weight: 600; font-size: 17px; line-height: 18px; text-transform: uppercase; letter-spacing: .06em; }
+.results { display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); }
+.results:empty { display: none; }
+.results button { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 48px; padding: 6px 14px; border: 0; background: none; text-align: left; font-size: 14px; }
+.results button + button { border-top: 1px solid var(--line); }
+.results small { font-size: 12px; color: var(--muted); }
+.switch { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 14px; cursor: pointer; }
+.switch input { flex: none; width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
+.sheet-foot { position: sticky; bottom: 0; margin-top: auto; padding: 16px var(--gutter) calc(20px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--bg); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.mono { padding: 10px 12px; border-radius: 8px; background: var(--surface); color: var(--text-2); font-family: ui-monospace, 'Roboto Mono', Menlo, monospace; font-size: 11px; line-height: 16px; overflow-wrap: anywhere; white-space: pre-wrap; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 40; transform: translateX(-50%); max-width: calc(100% - 32px); padding: 12px 16px; border-radius: 10px; background: var(--text); color: var(--bg); font-size: 14px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<main id="view-setup" class="wrap" hidden>
+  <div class="setup">
+    <h1 class="logo">Case <span>Closed</span></h1>
+    <p>A personal tracker for finished crime, detective and investigation series in English, first aired in 1990 or later.</p>
+    <p class="note">Series, posters and cast come from TMDB, a free film and TV database. The app needs your own free TMDB key to load them.</p>
+    <ol>
+      <li>Create a free account at <a href="https://www.themoviedb.org/signup" target="_blank" rel="noopener">themoviedb.org</a>.</li>
+      <li>Open <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">Settings, then API</a>, and request a key for personal use.</li>
+      <li>Copy the <b>API Key</b> and paste it here.</li>
+    </ol>
+    <form id="setup-form">
+      <label for="key-input">TMDB API key</label>
+      <input id="key-input" class="field" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste your key">
+      <p id="setup-err" class="err" hidden></p>
+      <button id="setup-go" class="btn" type="submit">Save and open</button>
+    </form>
+    <p class="note">The key is stored only on this device. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+  </div>
+</main>
+
+<main id="view-list" class="wrap" hidden>
+  <header class="top">
+    <div>
+      <h1 class="logo">Case <span>Closed</span></h1>
+      <p>Finished crime series in English, from 1990 on</p>
+    </div>
+    <a class="icon-btn" href="#/settings" aria-label="Settings">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg>
+    </a>
+  </header>
+  <div class="sticky">
+    <div class="searchrow">
+      <label class="search">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input id="q" type="search" placeholder="Search series or actor" aria-label="Search series or actor" autocomplete="off" enterkeyhint="search">
+      </label>
+      <a class="filter-btn" href="#/filters">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+        Filters
+        <span id="filter-count" class="badge" hidden></span>
+      </a>
+    </div>
+    <nav id="tabs" class="tabs" aria-label="Lists"></nav>
+  </div>
+  <div id="under" class="under"></div>
+  <div id="grid" class="grid"></div>
+  <div id="list-state"></div>
+  <div id="sentinel"></div>
+</main>
+
+<main id="view-show" class="wrap narrow" hidden></main>
+
+<div id="sheet-filters" class="sheet" hidden></div>
+<div id="sheet-settings" class="sheet" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- constants ---------- */
+const API = 'https://api.themoviedb.org/3';
+const IMG = 'https://image.tmdb.org/t/p/';
+const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1' };
+const META_TTL = 60 * 24 * 3600 * 1000;
+const FIRST_YEAR = 1990;
+
+const GENRES = [{ key: 'crime', id: 80, label: 'Crime' }, { key: 'mystery', id: 9648, label: 'Mystery' }];
+const UNSCRIPTED_GENRES = [99, 10764];          // Documentary, Reality
+const NEVER_GENRES = [10763, 10767];            // News, Talk
+const FOCUS = [
+  { key: 'police', label: 'Police', terms: ['police', 'police procedural', 'police detective', 'police officer', 'cop', 'police department'] },
+  { key: 'detective', label: 'Detective', terms: ['detective', 'private detective', 'private investigator', 'amateur detective', 'whodunit', 'murder mystery'] },
+  { key: 'investigation', label: 'Investigation', terms: ['investigation', 'murder investigation', 'criminal investigation', 'crime investigation', 'forensic science', 'forensics', 'cold case', 'fbi'] }
+];
+const SORTS = [
+  { key: 'popular', label: 'Most popular', api: 'popularity.desc' },
+  { key: 'rating', label: 'Top rated', api: 'vote_average.desc' },
+  { key: 'newest', label: 'Newest', api: 'first_air_date.desc' },
+  { key: 'oldest', label: 'Oldest', api: 'first_air_date.asc' },
+  { key: 'az', label: 'A to Z', api: 'name.asc' }
+];
+const DECADES = [1990, 2000, 2010, 2020];
+const COUNTRIES = [
+  { code: 'US', label: 'United States' }, { code: 'GB', label: 'United Kingdom' }, { code: 'CA', label: 'Canada' },
+  { code: 'AU', label: 'Australia' }, { code: 'IE', label: 'Ireland' }, { code: 'NZ', label: 'New Zealand' }
+];
+const NETWORKS = [
+  { id: 49, label: 'HBO', re: /hbo/i }, { id: 213, label: 'Netflix', re: /netflix/i }, { id: 4, label: 'BBC One', re: /bbc/i },
+  { id: 332, label: 'BBC Two', re: /bbc/i }, { id: 9, label: 'ITV', re: /itv/i }, { id: 26, label: 'Channel 4', re: /channel 4/i },
+  { id: 16, label: 'CBS', re: /cbs/i }, { id: 6, label: 'NBC', re: /nbc/i }, { id: 2, label: 'ABC', re: /abc/i },
+  { id: 19, label: 'FOX', re: /fox/i }, { id: 174, label: 'AMC', re: /amc/i }, { id: 67, label: 'Showtime', re: /showtime/i },
+  { id: 88, label: 'FX', re: /fx/i }, { id: 30, label: 'USA Network', re: /usa/i }, { id: 41, label: 'TNT', re: /tnt/i },
+  { id: 71, label: 'The CW', re: /cw/i }, { id: 1024, label: 'Prime Video', re: /prime|amazon/i }, { id: 453, label: 'Hulu', re: /hulu/i }
+];
+const SEASONS = [
+  { key: '1', label: '1', min: 1, max: 1 }, { key: '2-3', label: '2 to 3', min: 2, max: 3 },
+  { key: '4-6', label: '4 to 6', min: 4, max: 6 }, { key: '7+', label: '7 or more', min: 7, max: 999 }
+];
+const RATINGS = [{ v: null, label: 'Any' }, { v: 7, label: '7 or more' }, { v: 8, label: '8 or more' }];
+const DEFAULT_FILTERS = { sort: 'popular', actor: null, creator: null, genres: ['crime'], focus: [], decade: null, country: null, network: null, seasons: null, rating: null, canceled: true, unscripted: false };
+const TABS = [['all', 'All'], ['watchlist', 'Watchlist'], ['watching', 'Watching'], ['completed', 'Completed']];
+const TILES = ['#1F3350', '#17434A', '#4A3A1C', '#5A2328', '#2F3F2A', '#5C3A1E', '#2B2F45', '#4E1F2B', '#1F4035', '#3A2F55', '#3B3F47', '#25404F'];
+
+const ICON = {
+  back: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>',
+  close: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
+  check: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>',
+  mark: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"></path></svg>'
+};
+
+/* ---------- helpers ---------- */
+const $ = (sel, root) => (root || document).querySelector(sel);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const yearOf = (d) => (d && /^\d{4}/.test(d) ? Number(d.slice(0, 4)) : null);
+const plural = (n, word) => n + ' ' + word + (n === 1 ? '' : 's');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const fmt = (n) => Number(n).toLocaleString('en-US');
+const initials = (name) => String(name || '').split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+
+const store = {
+  get(k, fallback) { try { const v = localStorage.getItem(k); return v == null ? fallback : JSON.parse(v); } catch (e) { return fallback; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
+};
+
+let regionNames = null;
+try { regionNames = new Intl.DisplayNames(['en'], { type: 'region' }); } catch (e) { regionNames = null; }
+const countryName = (code) => { try { return (regionNames && regionNames.of(code)) || code; } catch (e) { return code; } };
+
+let toastTimer = 0;
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 3200);
+}
+
+/* ---------- state ---------- */
+function cleanFilters(raw) {
+  const f = Object.assign({}, clone(DEFAULT_FILTERS), raw && typeof raw === 'object' ? raw : {});
+  if (!SORTS.some((s) => s.key === f.sort)) f.sort = 'popular';
+  f.genres = Array.isArray(f.genres) ? f.genres.filter((g) => GENRES.some((x) => x.key === g)) : [];
+  if (!f.genres.length) f.genres = ['crime'];
+  f.focus = Array.isArray(f.focus) ? f.focus.filter((k) => FOCUS.some((x) => x.key === k)) : [];
+  if (!DECADES.includes(f.decade)) f.decade = null;
+  if (!COUNTRIES.some((c) => c.code === f.country)) f.country = null;
+  if (!NETWORKS.some((n) => n.id === f.network)) f.network = null;
+  if (!SEASONS.some((s) => s.key === f.seasons)) f.seasons = null;
+  if (f.rating !== 7 && f.rating !== 8) f.rating = null;
+  for (const k of ['actor', 'creator']) if (!(f[k] && Number(f[k].id) && f[k].name)) f[k] = null;
+  f.canceled = f.canceled !== false;
+  f.unscripted = f.unscripted === true;
+  return f;
+}
+function cleanLib(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const k of Object.keys(raw)) {
+    const e = raw[k];
+    const id = Number(e && e.id);
+    if (!id || !e.n) continue;
+    out[id] = {
+      id, n: String(e.n), y: Number(e.y) || null, e: Number(e.e) || null, p: typeof e.p === 'string' ? e.p : null,
+      s: Number(e.s) || 0, seen: Array.isArray(e.seen) ? [...new Set(e.seen.map(Number).filter((n) => n > 0))] : [],
+      want: !!e.want, u: Number(e.u) || Date.now()
+    };
+  }
+  return out;
+}
+
+const S = {
+  key: store.get(LS.key, ''),
+  lib: cleanLib(store.get(LS.lib, {})),
+  filters: cleanFilters({ sort: (store.get(LS.filters, null) || {}).sort }),
+  tab: 'all',
+  q: '',
+  searchAll: false,
+  focusMap: store.get(LS.kw, null),
+  badNets: store.get(LS.nets, null)
+};
+const diag = [];
+const saveFilters = () => store.set(LS.filters, { sort: S.filters.sort });
+
+/* ---------- TMDB ---------- */
+class ApiError extends Error {
+  constructor(kind, status) { super(kind); this.kind = kind; this.status = status; }
+}
+const isBearer = (k) => k.length > 60 || k.indexOf('eyJ') === 0;
+function logReq(url, status) {
+  const u = new URL(url);
+  if (status === 200 && /\/tv\/\d+$/.test(u.pathname)) return;
+  if (u.searchParams.has('api_key')) u.searchParams.set('api_key', 'KEY');
+  diag.push(new Date().toLocaleTimeString('en-GB') + '  ' + status + '  ' + u.pathname.replace('/3', '') + u.search);
+  if (diag.length > 20) diag.shift();
+}
+async function tmdb(path, params, keyOverride) {
+  const key = keyOverride || S.key;
+  const url = new URL(API + path);
+  const headers = { accept: 'application/json' };
+  if (isBearer(key)) headers.Authorization = 'Bearer ' + key; else url.searchParams.set('api_key', key);
+  if (params) for (const k of Object.keys(params)) { const v = params[k]; if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v); }
+  for (let attempt = 0; ; attempt++) {
+    let res;
+    try { res = await fetch(url, { headers }); }
+    catch (e) { logReq(url, 'no connection'); throw new ApiError('network'); }
+    logReq(url, res.status);
+    if (res.status === 429 && attempt < 3) { await sleep(1200 * (attempt + 1)); continue; }
+    if (res.status === 401) throw new ApiError('auth', 401);
+    if (res.status === 404) throw new ApiError('notfound', 404);
+    if (!res.ok) throw new ApiError('http', res.status);
+    return res.json();
+  }
+}
+function errorText(err) {
+  if (err && err.kind === 'network') return "Can't reach TMDB. Check your connection and try again.";
+  if (err && err.kind === 'auth') return 'TMDB rejected the key. Check it in Settings.';
+  if (err && err.kind === 'notfound') return "TMDB doesn't have this series any more.";
+  if (err && err.kind === 'http') return 'TMDB answered with an error (' + err.status + '). Try again in a moment.';
+  return 'Something went wrong while loading. Try again.';
+}
+
+function limiter(max) {
+  let active = 0; const queue = [];
+  const next = () => {
+    if (active >= max || !queue.length) return;
+    active++;
+    const job = queue.shift();
+    job.fn().then(job.res, job.rej).finally(() => { active--; next(); });
+  };
+  return (fn) => new Promise((res, rej) => { queue.push({ fn, res, rej }); next(); });
+}
+const limit = limiter(8);
+
+/* slim per-series record, cached on the device so captions and filters don't refetch */
+const metaMem = new Map();
+{
+  const saved = store.get(LS.meta, {});
+  if (saved && typeof saved === 'object') for (const k of Object.keys(saved)) if (saved[k] && saved[k].id) metaMem.set(Number(k), saved[k]);
+}
+const pending = new Map();
+let metaTimer = 0;
+function slim(d) {
+  return {
+    id: d.id, n: d.name || d.original_name || 'Untitled', y: yearOf(d.first_air_date), e: yearOf(d.last_air_date),
+    s: Number(d.number_of_seasons) || 0, st: d.status || '', p: d.poster_path || null,
+    nw: (d.networks || []).map((x) => x.id),
+    k: ((d.keywords && d.keywords.results) || []).map((x) => x.id),
+    t: Date.now()
+  };
+}
+function saveMetaSoon() {
+  clearTimeout(metaTimer);
+  metaTimer = setTimeout(() => {
+    let entries = [...metaMem.entries()];
+    if (entries.length > 5000) { entries.sort((a, b) => b[1].t - a[1].t); entries = entries.slice(0, 4000); }
+    if (!store.set(LS.meta, Object.fromEntries(entries))) {
+      entries.sort((a, b) => b[1].t - a[1].t);
+      store.set(LS.meta, Object.fromEntries(entries.slice(0, Math.floor(entries.length / 2))));
+    }
+  }, 1500);
+}
+function getMeta(id) {
+  const c = metaMem.get(id);
+  if (c && Date.now() - c.t < META_TTL) return Promise.resolve(c);
+  if (pending.has(id)) return pending.get(id);
+  const p = limit(() => tmdb('/tv/' + id, { language: 'en-US', append_to_response: 'keywords' }))
+    .then((d) => { const m = slim(d); metaMem.set(id, m); saveMetaSoon(); return m; })
+    .finally(() => pending.delete(id));
+  pending.set(id, p);
+  return p;
+}
+const fullMem = new Map();
+async function getFull(id) {
+  if (fullMem.has(id)) return fullMem.get(id);
+  const d = await tmdb('/tv/' + id, { language: 'en-US', append_to_response: 'aggregate_credits,keywords' });
+  fullMem.set(id, d);
+  metaMem.set(id, slim(d));
+  saveMetaSoon();
+  return d;
+}
+
+/* keyword ids for the Police / Detective / Investigation chips, looked up once by name */
+let focusJob = null, focusRetry = false;
+function resolveFocus() {
+  if (S.focusMap && !focusRetry) return Promise.resolve(S.focusMap);
+  if (focusJob) return focusJob;
+  focusRetry = false;
+  focusJob = (async () => {
+    const map = {};
+    let failed = false;
+    await Promise.all(FOCUS.map(async (g) => {
+      const ids = new Set();
+      await Promise.all(g.terms.map(async (term) => {
+        try {
+          const r = await limit(() => tmdb('/search/keyword', { query: term, page: 1 }));
+          for (const k of (r.results || [])) if (String(k.name || '').toLowerCase() === term) ids.add(k.id);
+        } catch (e) { failed = true; }
+      }));
+      map[g.key] = [...ids];
+    }));
+    S.focusMap = map;
+    if (!failed) store.set(LS.kw, map); else focusRetry = true;
+    focusJob = null;
+    return map;
+  })();
+  return focusJob;
+}
+/* network ids are checked against TMDB once; a chip whose id points elsewhere is hidden */
+let netJob = null;
+function verifyNetworks() {
+  if (S.badNets) return Promise.resolve(S.badNets);
+  if (netJob) return netJob;
+  netJob = (async () => {
+    const bad = [];
+    let failed = false;
+    await Promise.all(NETWORKS.map(async (n) => {
+      try {
+        const r = await limit(() => tmdb('/network/' + n.id));
+        if (!n.re.test(String(r.name || ''))) bad.push(n.id);
+      } catch (e) { if (e.kind === 'notfound') bad.push(n.id); else failed = true; }
+    }));
+    S.badNets = bad;
+    if (!failed) store.set(LS.nets, bad);
+    netJob = null;
+    return bad;
+  })();
+  return netJob;
+}
+const networkOk = (id) => !(S.badNets && S.badNets.includes(id));
+
+/* ---------- library ---------- */
+function saveLib() {
+  if (!store.set(LS.lib, S.lib)) toast("Couldn't save on this device. Storage may be full or blocked.");
+}
+function statusOf(e) {
+  if (!e) return null;
+  const seen = e.seen.length;
+  if (e.s > 0 && seen >= e.s) return 'completed';
+  if (seen > 0) return 'watching';
+  if (e.want) return 'watchlist';
+  return null;
+}
+function libCounts() {
+  const c = { watchlist: 0, watching: 0, completed: 0 };
+  for (const id of Object.keys(S.lib)) { const st = statusOf(S.lib[id]); if (st) c[st]++; }
+  return c;
+}
+function seasonsOf(d) {
+  const list = (d.seasons || []).filter((s) => s.season_number >= 1).sort((a, b) => a.season_number - b.season_number);
+  if (list.length) return list;
+  return Array.from({ length: Number(d.number_of_seasons) || 0 }, (_, i) => ({ season_number: i + 1 }));
+}
+function entryFor(d) {
+  const total = seasonsOf(d).length;
+  let e = S.lib[d.id];
+  if (!e) e = S.lib[d.id] = { id: d.id, seen: [], want: false, u: Date.now() };
+  e.n = d.name || e.n || 'Untitled';
+  e.y = yearOf(d.first_air_date) || e.y || null;
+  e.e = yearOf(d.last_air_date) || e.e || null;
+  e.p = d.poster_path || e.p || null;
+  e.s = total || e.s || 0;
+  return e;
+}
+function tidyEntry(id) {
+  const e = S.lib[id];
+  if (e && !e.want && !e.seen.length) delete S.lib[id];
+}
+
+/* ---------- rendering: cards ---------- */
+function posterHTML(path, name, id) {
+  const tile = TILES[Math.abs(Number(id) || 0) % TILES.length];
+  const inner = path
+    ? '<img src="' + IMG + 'w342' + esc(path) + '" alt="" loading="lazy" decoding="async" data-name="' + esc(name) + '">'
+    : '<span class="poster-title">' + esc(name) + '</span>';
+  return '<div class="poster" style="--tile:' + tile + '">' + inner + '</div>';
+}
+function caption(m) {
+  const parts = [];
+  if (m.y) parts.push(String(m.y));
+  if (m.s) parts.push(plural(m.s, 'season'));
+  return parts.join(' · ');
+}
+function cardHTML(m) {
+  return '<a class="card" href="#/show/' + m.id + '">' + posterHTML(m.p, m.n, m.id) +
+    '<div class="cap"><div class="cap-name">' + esc(m.n) + '</div><div class="cap-meta">' + esc(caption(m)) + '</div></div></a>';
+}
+const skeletonHTML = (n) => Array.from({ length: n }, () => '<div class="card skel" aria-hidden="true"><div class="poster"></div><div class="cap"><div class="bar"></div><div class="bar short"></div></div></div>').join('');
+
+document.addEventListener('error', (ev) => {
+  const img = ev.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  const box = img.parentElement;
+  if (!box) return;
+  if (box.classList.contains('poster')) box.innerHTML = '<span class="poster-title">' + esc(img.dataset.name || '') + '</span>';
+  else if (box.classList.contains('avatar')) box.textContent = initials(img.dataset.name || '');
+}, true);
+
+/* ---------- list: browse ---------- */
+let browse = null;
+let browseToken = 0;
+let peopleToken = 0;
+
+const mode = () => (S.q.trim() ? 'search' : (S.filters.actor || S.filters.creator) ? 'person' : 'discover');
+const signature = () => JSON.stringify([S.q.trim(), S.searchAll, S.filters]);
+const genreIds = (f) => GENRES.filter((g) => f.genres.includes(g.key)).map((g) => g.id);
+const focusIds = (f) => { const ids = new Set(); for (const k of f.focus) for (const id of ((S.focusMap && S.focusMap[k]) || [])) ids.add(id); return [...ids]; };
+const seasonRange = (f) => SEASONS.find((s) => s.key === f.seasons) || null;
+const okStatus = (st, f) => st === 'Ended' || (f.canceled && st === 'Canceled');
+
+function discoverParams(f, page) {
+  const p = {
+    language: 'en-US', include_adult: 'false', page: page,
+    with_original_language: 'en',
+    'first_air_date.gte': FIRST_YEAR + '-01-01',
+    with_status: f.canceled ? '3|4' : '3',
+    with_genres: genreIds(f).join('|'),
+    sort_by: (SORTS.find((s) => s.key === f.sort) || SORTS[0]).api
+  };
+  if (!f.unscripted) p.with_type = '2|4';
+  if (f.decade) { p['first_air_date.gte'] = f.decade + '-01-01'; p['first_air_date.lte'] = (f.decade + 9) + '-12-31'; }
+  if (f.country) p.with_origin_country = f.country;
+  if (f.network) p.with_networks = f.network;
+  let minVotes = 0;
+  if (f.rating) { p['vote_average.gte'] = f.rating; minVotes = 20; }
+  if (f.sort === 'rating') minVotes = 50;
+  if (minVotes) p['vote_count.gte'] = minVotes;
+  if (f.focus.length) p.with_keywords = focusIds(f).join('|');
+  return p;
+}
+/* scope test on a search or credits result, before details are fetched */
+function inScope(c, f, strict) {
+  if (c.original_language !== 'en') return false;
+  const y = yearOf(c.first_air_date);
+  if (!y || y < FIRST_YEAR) return false;
+  const g = c.genre_ids || [];
+  const wanted = strict ? genreIds(f) : GENRES.map((x) => x.id);
+  if (!g.some((id) => wanted.includes(id))) return false;
+  if (!strict) return true;
+  if (g.some((id) => NEVER_GENRES.includes(id))) return false;
+  if (!f.unscripted && g.some((id) => UNSCRIPTED_GENRES.includes(id))) return false;
+  if (f.decade && (y < f.decade || y > f.decade + 9)) return false;
+  if (f.country && !(c.origin_country || []).includes(f.country)) return false;
+  if (f.rating && !((c.vote_average || 0) >= f.rating && (c.vote_count || 0) >= 20)) return false;
+  return true;
+}
+function passesMeta(m, f, how) {
+  if (how === 'all') return true;
+  if (how !== 'seasons' && !okStatus(m.st, f)) return false;
+  if (how === 'scope') return true;
+  const r = seasonRange(f);
+  if (r && !(m.s >= r.min && m.s <= r.max)) return false;
+  if (how === 'seasons') return true;
+  if (f.network && !(m.nw || []).includes(f.network)) return false;
+  if (f.focus.length) { const ids = focusIds(f); if (!(m.k || []).some((id) => ids.includes(id))) return false; }
+  return true;
+}
+
+function startBrowse() {
+  if (browse && browse.sig === signature() && !browse.error) { paintBrowse(); return; }
+  const b = browse = { token: ++browseToken, sig: signature(), mode: mode(), items: [], ids: new Set(), page: 0, pages: 1, total: null, loading: false, done: false, stalled: false, error: null, people: [], scanned: 0 };
+  paintBrowse();
+  if (b.mode === 'search') loadPeople(S.q.trim());
+  loadMore();
+}
+function paintBrowse() {
+  if (S.tab !== 'all' || !browse) return;
+  $('#grid').innerHTML = browse.items.map(cardHTML).join('');
+  paintUnder();
+  paintState();
+}
+async function loadPeople(q) {
+  const token = ++peopleToken;
+  try {
+    const r = await tmdb('/search/person', { query: q, page: 1, language: 'en-US', include_adult: 'false' });
+    if (token !== peopleToken || !browse || browse.mode !== 'search') return;
+    browse.people = (r.results || []).filter((p) => p.name).slice(0, 6).map((p) => ({ id: p.id, name: p.name, dept: p.known_for_department || '' }));
+    paintUnder();
+  } catch (e) { /* the series results still show */ }
+}
+async function loadMore() {
+  const b = browse;
+  if (!b || b.loading || b.done || S.tab !== 'all') return;
+  b.loading = true; b.error = null; b.stalled = false;
+  paintState();
+  const f = S.filters;
+  let added = 0;
+  try {
+    if (b.mode === 'person') {
+      added = await loadPerson(b, f);
+    } else {
+      if (b.mode === 'discover' && f.focus.length) { await resolveFocus(); if (!focusIds(f).length) { b.done = true; b.total = 0; return; } }
+      let rounds = 0;
+      while (!b.done && added < 12 && rounds < 4) {
+        const page = b.page + 1;
+        const r = b.mode === 'search'
+          ? await tmdb('/search/tv', { query: S.q.trim(), page: page, language: 'en-US', include_adult: 'false' })
+          : await tmdb('/discover/tv', discoverParams(f, page));
+        if (b.token !== browseToken) return;
+        b.page = page;
+        b.pages = Math.min(Number(r.total_pages) || 1, b.mode === 'search' ? 15 : 500);
+        if (b.mode === 'discover') b.total = Number(r.total_results) || 0;
+        let cands = r.results || [];
+        b.scanned += cands.length;
+        if (b.mode === 'search' && !S.searchAll) cands = cands.filter((c) => inScope(c, f, false));
+        const metas = await Promise.all(cands.map((c) => getMeta(c.id).catch(() => null)));
+        if (b.token !== browseToken) return;
+        const how = b.mode === 'search' ? (S.searchAll ? 'all' : 'scope') : 'seasons';
+        let html = '';
+        for (const m of metas) {
+          if (!m || b.ids.has(m.id) || !passesMeta(m, f, how)) continue;
+          b.ids.add(m.id); b.items.push(m); html += cardHTML(m); added++;
+        }
+        if (html && S.tab === 'all') $('#grid').insertAdjacentHTML('beforeend', html);
+        rounds++;
+        if (b.page >= b.pages || !(r.results || []).length) b.done = true;
+      }
+    }
+    if (!b.done && added === 0) b.stalled = true;
+  } catch (err) {
+    if (b.token === browseToken) b.error = err;
+  } finally {
+    if (b.token === browseToken) {
+      b.loading = false;
+      paintUnder();
+      paintState();
+      if (!b.done && !b.stalled && !b.error) requestAnimationFrame(nearEnd);
+    }
+  }
+}
+async function loadPerson(b, f) {
+  const lists = [];
+  if (f.actor) lists.push(((await tmdb('/person/' + f.actor.id + '/tv_credits', { language: 'en-US' })).cast) || []);
+  if (f.creator) lists.push(((await tmdb('/person/' + f.creator.id + '/tv_credits', { language: 'en-US' })).crew) || []);
+  if (f.focus.length) await resolveFocus();
+  if (b.token !== browseToken) return 0;
+  const byId = new Map();
+  for (const c of lists[0]) if (!byId.has(c.id)) byId.set(c.id, c);
+  for (const l of lists.slice(1)) { const ids = new Set(l.map((c) => c.id)); for (const id of [...byId.keys()]) if (!ids.has(id)) byId.delete(id); }
+  const cands = [...byId.values()].filter((c) => inScope(c, f, true));
+  const metas = await Promise.all(cands.map((c) => getMeta(c.id).catch(() => null)));
+  if (b.token !== browseToken) return 0;
+  const rows = [];
+  cands.forEach((c, i) => { const m = metas[i]; if (m && passesMeta(m, f, 'full')) rows.push({ c, m }); });
+  const by = {
+    popular: (a, z) => (z.c.popularity || 0) - (a.c.popularity || 0),
+    rating: (a, z) => (z.c.vote_average || 0) - (a.c.vote_average || 0),
+    newest: (a, z) => String(z.c.first_air_date || '').localeCompare(String(a.c.first_air_date || '')),
+    oldest: (a, z) => String(a.c.first_air_date || '').localeCompare(String(z.c.first_air_date || '')),
+    az: (a, z) => a.m.n.localeCompare(z.m.n)
+  };
+  rows.sort(by[f.sort] || by.popular);
+  b.items = rows.map((r) => r.m);
+  b.ids = new Set(b.items.map((m) => m.id));
+  b.total = b.items.length;
+  b.done = true;
+  if (S.tab === 'all') $('#grid').innerHTML = b.items.map(cardHTML).join('');
+  return b.items.length;
+}
+function nearEnd() {
+  if (current !== 'list' || openSheet || S.tab !== 'all') return;
+  const r = $('#sentinel').getBoundingClientRect();
+  if (r.top < window.innerHeight + 700) loadMore();
+}
+
+/* ---------- list: chrome ---------- */
+function activeChips(f) {
+  const chips = [];
+  if (f.actor) chips.push(['actor', 'With ' + f.actor.name]);
+  if (f.creator) chips.push(['creator', 'By ' + f.creator.name]);
+  if (f.genres.length === 2) chips.push(['genres', 'Crime and Mystery']);
+  else if (f.genres[0] === 'mystery') chips.push(['genres', 'Mystery only']);
+  for (const k of f.focus) chips.push(['focus:' + k, FOCUS.find((x) => x.key === k).label]);
+  if (f.decade) chips.push(['decade', f.decade + 's']);
+  if (f.country) chips.push(['country', COUNTRIES.find((c) => c.code === f.country).label]);
+  if (f.network) chips.push(['network', NETWORKS.find((n) => n.id === f.network).label]);
+  if (f.seasons) { const r = seasonRange(f); chips.push(['seasons', r.key === '1' ? '1 season' : r.label + ' seasons']); }
+  if (f.rating) chips.push(['rating', 'Score ' + f.rating + ' or more']);
+  if (!f.canceled) chips.push(['canceled', 'No canceled series']);
+  if (f.unscripted) chips.push(['unscripted', 'With documentaries']);
+  return chips;
+}
+function clearFilter(name) {
+  const f = S.filters;
+  if (name.indexOf('focus:') === 0) f.focus = f.focus.filter((k) => k !== name.slice(6));
+  else if (name === 'genres') f.genres = ['crime'];
+  else f[name] = clone(DEFAULT_FILTERS)[name];
+  saveFilters();
+  refreshList();
+}
+function paintUnder() {
+  const el = $('#under');
+  const chips = activeChips(S.filters);
+  const badge = $('#filter-count');
+  badge.hidden = !chips.length;
+  badge.textContent = chips.length;
+  let html = '';
+  const b = browse;
+  if (S.tab === 'all') {
+    const m = mode();
+    if (m !== 'search' && chips.length) {
+      html += '<div class="active">' + chips.map((c) => '<button type="button" class="chip on" data-clear="' + esc(c[0]) + '" aria-label="Remove filter: ' + esc(c[1]) + '">' + esc(c[1]) + ICON.close + '</button>').join('') + '</div>';
+    }
+    if (m === 'search' && b && b.people.length) {
+      html += '<div class="people"><div class="result-line">People</div><div class="chips">' + b.people.map((p) =>
+        '<button type="button" class="chip" data-person="' + p.id + '" data-name="' + esc(p.name) + '" data-dept="' + esc(p.dept) + '"><span>' + esc(p.name) + '</span><small>' + esc(p.dept === 'Acting' ? 'Actor' : (p.dept || 'Crew')) + '</small></button>').join('') + '</div></div>';
+    }
+    let line = '';
+    if (m === 'search') line = (S.searchAll ? 'All TV series matching ' : 'Finished crime series matching ') + '“' + S.q.trim() + '”' + (chips.length ? ' · filters paused' : '');
+    else if (b && b.total != null && !(b.loading && !b.items.length) && !(S.filters.seasons && m === 'discover')) {
+      const who = [S.filters.actor && 'with ' + S.filters.actor.name, S.filters.creator && 'by ' + S.filters.creator.name].filter(Boolean).join(', ');
+      line = fmt(b.total) + ' series' + (who ? ' ' + who : '');
+    }
+    if (line) html += '<p class="result-line">' + esc(line) + '</p>';
+  } else {
+    const n = libItems().length;
+    html += '<p class="result-line">' + esc(n + ' series') + (S.q.trim() ? ' matching “' + esc(S.q.trim()) + '”' : '') + '</p>';
+  }
+  el.innerHTML = html;
+}
+function paintState() {
+  const el = $('#list-state');
+  if (S.tab !== 'all') return;
+  const b = browse;
+  if (!b) { el.innerHTML = ''; return; }
+  const last = diag.length ? diag[diag.length - 1] : '';
+  if (b.error) {
+    el.innerHTML = '<div class="state"><strong>Couldn’t load series</strong><p>' + esc(errorText(b.error)) + '</p><button type="button" class="btn ghost" data-act="retry">Try again</button>' + (last ? '<code>' + esc(last) + '</code>' : '') + '</div>';
+  } else if (b.loading && !b.items.length) {
+    el.innerHTML = '<div class="grid">' + skeletonHTML(9) + '</div>';
+  } else if (b.loading) {
+    el.innerHTML = '<div class="state"><p>Loading more…</p></div>';
+  } else if (!b.items.length && b.done) {
+    let msg, extra = '';
+    if (b.mode === 'search' && !S.searchAll) { msg = 'No finished crime or mystery series match “' + esc(S.q.trim()) + '”.'; extra = '<button type="button" class="btn ghost" data-act="search-all">Search all TV series</button>'; }
+    else if (b.mode === 'search') msg = 'TMDB has no series matching “' + esc(S.q.trim()) + '”.';
+    else if (b.mode === 'person') msg = 'No finished crime series found for this person with the current filters.';
+    else if (activeChips(S.filters).length) { msg = 'No series match these filters.'; extra = '<button type="button" class="btn ghost" data-act="reset-filters">Clear filters</button>'; }
+    else { msg = 'TMDB returned no series for the standard search.'; extra = last ? '<code>' + esc(last) + '</code>' : ''; }
+    el.innerHTML = '<div class="state"><strong>Nothing here</strong><p>' + msg + '</p>' + extra + '</div>';
+  } else if (b.stalled) {
+    el.innerHTML = '<div class="state"><p>Checked ' + fmt(b.scanned) + ' series so far.</p><button type="button" class="btn ghost" data-act="more">Keep looking</button></div>';
+  } else if (!b.done) {
+    el.innerHTML = '<div class="state"><button type="button" class="btn ghost" data-act="more">Load more</button></div>';
+  } else if (b.mode === 'search' && !S.searchAll) {
+    el.innerHTML = '<div class="state"><p>Not what you were looking for?</p><button type="button" class="btn ghost" data-act="search-all">Search all TV series</button></div>';
+  } else if (b.mode === 'search') {
+    el.innerHTML = '<div class="state"><button type="button" class="btn ghost" data-act="search-scope">Back to finished crime series</button></div>';
+  } else {
+    el.innerHTML = '';
+  }
+}
+function libItems() {
+  const q = S.q.trim().toLowerCase();
+  return Object.keys(S.lib).map((id) => S.lib[id])
+    .filter((e) => statusOf(e) === S.tab && (!q || e.n.toLowerCase().includes(q)))
+    .sort((a, b) => b.u - a.u);
+}
+function paintLibrary() {
+  const items = libItems();
+  $('#grid').innerHTML = items.map(cardHTML).join('');
+  paintUnder();
+  const empty = {
+    watchlist: ['Your watchlist is empty', 'Open a series and tap “Add to watchlist” to keep it here.'],
+    watching: ['Nothing in progress', 'Tick the seasons you have seen on a series page and it shows up here.'],
+    completed: ['No completed series yet', 'A series moves here once every season is ticked.']
+  }[S.tab];
+  $('#list-state').innerHTML = items.length ? '' : '<div class="state"><strong>' + (S.q.trim() ? 'No matches' : empty[0]) + '</strong><p>' + (S.q.trim() ? 'Nothing in this list matches your search.' : empty[1]) + '</p></div>';
+}
+function paintTabs() {
+  const c = libCounts();
+  $('#tabs').innerHTML = TABS.map((t) => '<button type="button" class="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + (t[0] !== 'all' ? '<span class="n">' + c[t[0]] + '</span>' : '') + '</button>').join('');
+}
+function refreshList() {
+  paintTabs();
+  if (S.tab === 'all') startBrowse(); else paintLibrary();
+}
+
+/* ---------- series page ---------- */
+let showToken = 0;
+let showing = null;
+function showShell(inner) {
+  return '<div class="show-top"><a class="icon-btn" href="#/" data-back aria-label="Back to the list">' + ICON.back + '</a>' + (showing ? '<a class="ext" href="https://www.themoviedb.org/tv/' + showing.id + '" target="_blank" rel="noopener">View on TMDB</a>' : '') + '</div>' + inner;
+}
+async function openShow(id) {
+  const token = ++showToken;
+  const el = $('#view-show');
+  const known = S.lib[id] || metaMem.get(id);
+  showing = { id: id };
+  el.innerHTML = showShell('<div class="hero"><div class="poster" style="--tile:' + TILES[id % TILES.length] + '"></div><div class="hero-info"><h1>' + esc(known ? known.n : 'Loading…') + '</h1><p class="note">Loading series details…</p></div></div>');
+  let d;
+  try { d = await getFull(id); }
+  catch (err) {
+    if (token !== showToken) return;
+    const e = S.lib[id];
+    if (e) { d = { id: id, name: e.n, first_air_date: e.y ? e.y + '-01-01' : '', last_air_date: e.e ? e.e + '-01-01' : '', poster_path: e.p, number_of_seasons: e.s, offline: true }; }
+    else { el.innerHTML = showShell('<div class="state"><strong>Couldn’t open this series</strong><p>' + esc(errorText(err)) + '</p><button type="button" class="btn ghost" data-act="reload-show">Try again</button></div>'); return; }
+  }
+  if (token !== showToken) return;
+  showing = d;
+  paintShow(d);
+}
+function trackInfo(d) {
+  const total = seasonsOf(d).length;
+  const e = S.lib[d.id];
+  const seen = e ? e.seen.filter((n) => seasonsOf(d).some((s) => s.season_number === n)).length : 0;
+  let status = 'Not started';
+  if (total > 0 && seen >= total) status = 'Completed';
+  else if (seen > 0) status = 'Watching';
+  else if (e && e.want) status = 'On your watchlist';
+  return { total, seen, status, want: !!(e && e.want), pct: total ? Math.round((seen / total) * 100) : 0 };
+}
+function paintShow(d) {
+  const el = $('#view-show');
+  const seasons = seasonsOf(d);
+  const y = yearOf(d.first_air_date), e = yearOf(d.last_air_date);
+  const years = y ? (e && e !== y ? y + '–' + e : String(y)) : '';
+  const countries = (d.origin_country || []).slice(0, 2).map(countryName).join(', ');
+  const networks = (d.networks || []).slice(0, 2).map((n) => n.name).join(', ');
+  const genres = (d.genres || []).slice(0, 3).map((g) => g.name).join(', ');
+  const statusLabel = d.status === 'Ended' ? 'Ended' : d.status === 'Canceled' ? 'Canceled' : d.status ? 'Not finished yet' : '';
+  const facts = [
+    [years, countries].filter(Boolean).join(' · '),
+    [seasons.length ? plural(seasons.length, 'season') : '', d.number_of_episodes ? plural(d.number_of_episodes, 'episode') : ''].filter(Boolean).join(' · '),
+    [networks, genres].filter(Boolean).join(' · '),
+    [(d.vote_count || 0) >= 10 ? 'TMDB score ' + Number(d.vote_average).toFixed(1) : '', statusLabel].filter(Boolean).join(' · ')
+  ].filter(Boolean);
+  const cast = (((d.aggregate_credits || {}).cast) || []).slice()
+    .sort((a, z) => (z.total_episode_count || 0) - (a.total_episode_count || 0) || (a.order || 0) - (z.order || 0)).slice(0, 12);
+  const creators = d.created_by || [];
+  const e0 = S.lib[d.id];
+  let html = '<div class="hero">' + posterHTML(d.poster_path, d.name, d.id) +
+    '<div class="hero-info"><h1>' + esc(d.name) + '</h1><div class="facts">' + facts.map((f) => '<div>' + esc(f) + '</div>').join('') + '</div>' +
+    '<div class="want-row"><button type="button" class="want" id="want" aria-pressed="false"></button></div></div></div>';
+  html += '<div class="progress"><div class="progress-row"><b id="p-status"></b><span id="p-count"></span></div><div class="track"><i id="p-bar" style="width:0%"></i></div></div>';
+  if (d.offline) html += '<p class="note" style="margin-bottom:24px">You’re offline, so only your saved progress is shown.</p>';
+  if (d.overview) html += '<section class="sec"><h2 class="h-sec">Overview</h2><p>' + esc(d.overview) + '</p></section>';
+  if (cast.length || creators.length) {
+    html += '<section class="sec"><div class="sec-head"><h2 class="h-sec">Cast</h2><span class="note">Tap a name to see their series</span></div>';
+    if (cast.length) html += '<div class="cast">' + cast.map((p) => '<button type="button" class="person" data-person="' + p.id + '" data-name="' + esc(p.name) + '" data-dept="Acting"><span class="avatar">' +
+      (p.profile_path ? '<img src="' + IMG + 'w185' + esc(p.profile_path) + '" alt="" loading="lazy" data-name="' + esc(p.name) + '">' : esc(initials(p.name))) + '</span><span>' + esc(p.name) + '</span></button>').join('') + '</div>';
+    if (creators.length) html += '<div class="created">Created by ' + creators.map((p) => '<button type="button" class="text-btn" data-person="' + p.id + '" data-name="' + esc(p.name) + '" data-dept="Creator">' + esc(p.name) + '</button>').join('') + '</div>';
+    html += '</section>';
+  }
+  if (seasons.length) {
+    html += '<section class="sec"><div class="sec-head"><h2 class="h-sec">Seasons</h2><button type="button" class="text-btn" id="mark-all"></button></div><div class="seasons">' +
+      seasons.map((s) => {
+        const meta = [yearOf(s.air_date), s.episode_count ? plural(s.episode_count, 'episode') : ''].filter(Boolean).join(' · ');
+        const on = !!(e0 && e0.seen.includes(s.season_number));
+        return '<label class="season"><input type="checkbox" id="season-' + s.season_number + '" data-season="' + s.season_number + '"' + (on ? ' checked' : '') + '><span class="txt"><b>Season ' + s.season_number + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span><span class="seen">Seen</span></label>';
+      }).join('') + '</div></section>';
+  }
+  el.innerHTML = showShell(html);
+  paintTrack(d);
+}
+function paintTrack(d) {
+  const t = trackInfo(d);
+  const want = $('#want');
+  if (want) {
+    want.setAttribute('aria-pressed', String(t.want));
+    want.innerHTML = t.want ? ICON.check + 'On my watchlist' : ICON.mark + 'Add to watchlist';
+  }
+  const st = $('#p-status'); if (st) st.textContent = t.status;
+  const ct = $('#p-count'); if (ct) ct.textContent = t.total ? t.seen + ' of ' + plural(t.total, 'season') : '';
+  const bar = $('#p-bar'); if (bar) bar.style.width = t.pct + '%';
+  const all = $('#mark-all'); if (all) all.textContent = t.total && t.seen >= t.total ? 'Unmark all' : 'Mark all';
+  const e = S.lib[d.id];
+  document.querySelectorAll('#view-show input[data-season]').forEach((box) => { box.checked = !!(e && e.seen.includes(Number(box.dataset.season))); });
+}
+function setSeen(d, nums, on) {
+  const e = entryFor(d);
+  const set = new Set(e.seen);
+  for (const n of nums) { if (on) set.add(n); else set.delete(n); }
+  e.seen = [...set].sort((a, b) => a - b);
+  e.u = Date.now();
+  tidyEntry(d.id);
+  saveLib();
+  paintTrack(d);
+}
+function filterByPerson(id, name, dept) {
+  const f = clone(DEFAULT_FILTERS);
+  f[dept === 'Acting' ? 'actor' : 'creator'] = { id: Number(id), name: name };
+  S.filters = f;
+  saveFilters();
+  S.q = ''; $('#q').value = ''; S.searchAll = false; S.tab = 'all';
+  listScroll = 0;
+  if (current === 'list' && !openSheet) refreshList();
+  else { pendingReload = true; location.hash = '#/'; }
+}
+
+/* ---------- filters sheet ---------- */
+let draft = null;
+function chip(group, value, label, on) {
+  return '<button type="button" class="chip" data-f="' + group + '" data-v="' + esc(value) + '" aria-pressed="' + on + '">' + esc(label) + '</button>';
+}
+function personGroup(kind, label, hint) {
+  const sel = draft[kind];
+  return '<div class="group"><label class="h" for="pick-' + kind + '">' + label + '</label>' +
+    '<input id="pick-' + kind + '" class="field" type="text" data-pick="' + kind + '" placeholder="' + hint + '" autocomplete="off">' +
+    '<div class="results" id="res-' + kind + '"></div>' +
+    (sel ? '<div class="chips"><button type="button" class="chip on" data-unpick="' + kind + '" aria-label="Remove ' + esc(sel.name) + '">' + esc(sel.name) + ICON.close + '</button></div>' : '') + '</div>';
+}
+function paintFilters() {
+  const f = draft;
+  const focus = FOCUS.filter((g) => S.focusMap && (S.focusMap[g.key] || []).length);
+  const nets = NETWORKS.filter((n) => networkOk(n.id));
+  const html = '<div class="sheet-in"><div class="sheet-head"><a class="icon-btn" href="#/" data-back aria-label="Close filters">' + ICON.close + '</a><h1>Filters</h1><button type="button" class="text-btn" data-act="filters-reset">Clear</button></div>' +
+    '<div class="sheet-body">' +
+    '<div class="group"><h2>Sort by</h2><div class="chips">' + SORTS.map((s) => chip('sort', s.key, s.label, f.sort === s.key)).join('') + '</div></div>' +
+    personGroup('actor', 'Actor', 'Type a name') +
+    personGroup('creator', 'Creator or crew', 'Type a name') +
+    '<div class="group"><h2>Genre</h2><div class="chips">' + GENRES.map((g) => chip('genres', g.key, g.label, f.genres.includes(g.key))).join('') + '</div><p class="note">Mystery adds whodunits and supernatural mysteries that TMDB does not list under Crime.</p></div>' +
+    (focus.length ? '<div class="group"><h2>Focus</h2><div class="chips">' + focus.map((g) => chip('focus', g.key, g.label, f.focus.includes(g.key))).join('') + '</div><p class="note">Based on TMDB keywords, so some series are missing from these.</p></div>' : '') +
+    '<div class="group"><h2>First aired</h2><div class="chips even">' + DECADES.map((d) => chip('decade', d, d + 's', f.decade === d)).join('') + '</div></div>' +
+    '<div class="group"><h2>Country</h2><div class="chips">' + COUNTRIES.map((c) => chip('country', c.code, c.label, f.country === c.code)).join('') + '</div></div>' +
+    '<div class="group"><h2>Network or streaming</h2><div class="chips">' + nets.map((n) => chip('network', n.id, n.label, f.network === n.id)).join('') + '</div></div>' +
+    '<div class="group"><h2>Number of seasons</h2><div class="chips even">' + SEASONS.map((s) => chip('seasons', s.key, s.label, f.seasons === s.key)).join('') + '</div></div>' +
+    '<div class="group"><h2>TMDB score</h2><div class="chips">' + RATINGS.map((r) => chip('rating', r.v == null ? '' : r.v, r.label, f.rating === r.v)).join('') + '</div></div>' +
+    '<div class="group"><h2>Include</h2>' +
+      '<label class="switch"><input type="checkbox" id="f-canceled" data-toggle="canceled"' + (f.canceled ? ' checked' : '') + '>Canceled series</label>' +
+      '<label class="switch"><input type="checkbox" id="f-unscripted" data-toggle="unscripted"' + (f.unscripted ? ' checked' : '') + '>Documentaries and reality</label></div>' +
+    '</div><div class="sheet-foot"><button type="button" class="btn block" data-act="filters-apply">Show series</button></div></div>';
+  const sheet = $('#sheet-filters');
+  const top = sheet.scrollTop;
+  sheet.innerHTML = html;
+  sheet.scrollTop = top;
+}
+function openFilters() {
+  draft = clone(S.filters);
+  paintFilters();
+  $('#sheet-filters').scrollTop = 0;
+  Promise.all([resolveFocus().catch(() => null), verifyNetworks().catch(() => null)]).then(() => { if (openSheet === 'filters' && draft) paintFilters(); });
+}
+function draftSet(group, raw) {
+  const f = draft;
+  if (group === 'sort') f.sort = raw;
+  else if (group === 'genres') {
+    f.genres = f.genres.includes(raw) ? f.genres.filter((g) => g !== raw) : f.genres.concat(raw);
+    if (!f.genres.length) f.genres = GENRES.map((g) => g.key).filter((g) => g !== raw);
+  }
+  else if (group === 'focus') f.focus = f.focus.includes(raw) ? f.focus.filter((k) => k !== raw) : f.focus.concat(raw);
+  else if (group === 'decade' || group === 'network') { const v = Number(raw); f[group] = f[group] === v ? null : v; }
+  else if (group === 'rating') f.rating = raw === '' ? null : Number(raw);
+  else f[group] = f[group] === raw ? null : raw;
+  paintFilters();
+}
+let pickTimer = 0, pickToken = 0;
+function pickSearch(kind, q) {
+  clearTimeout(pickTimer);
+  const box = $('#res-' + kind);
+  if (q.trim().length < 2) { if (box) box.innerHTML = ''; return; }
+  pickTimer = setTimeout(async () => {
+    const token = ++pickToken;
+    try {
+      const r = await tmdb('/search/person', { query: q.trim(), page: 1, language: 'en-US', include_adult: 'false' });
+      if (token !== pickToken) return;
+      const out = (r.results || []).filter((p) => p.name).slice(0, 6);
+      const target = $('#res-' + kind);
+      if (!target) return;
+      target.innerHTML = out.length
+        ? out.map((p) => '<button type="button" data-choose="' + kind + '" data-id="' + p.id + '" data-name="' + esc(p.name) + '"><span>' + esc(p.name) + '</span><small>' + esc(p.known_for_department === 'Acting' ? 'Actor' : (p.known_for_department || 'Crew')) + '</small></button>').join('')
+        : '<button type="button" disabled><span>No one found</span></button>';
+    } catch (e) { const target = $('#res-' + kind); if (target) target.innerHTML = '<button type="button" disabled><span>' + esc(errorText(e)) + '</span></button>'; }
+  }, 300);
+}
+
+/* ---------- settings sheet ---------- */
+let installEvent = null;
+window.addEventListener('beforeinstallprompt', (ev) => { ev.preventDefault(); installEvent = ev; if (openSheet === 'settings') paintSettings(); });
+function paintSettings() {
+  const c = libCounts();
+  const total = c.watchlist + c.watching + c.completed;
+  const masked = S.key ? S.key.slice(0, 4) + '…' + S.key.slice(-4) : '';
+  $('#sheet-settings').innerHTML = '<div class="sheet-in"><div class="sheet-head"><a class="icon-btn" href="#/" data-back aria-label="Close settings">' + ICON.close + '</a><h1>Settings</h1></div><div class="sheet-body">' +
+    (installEvent ? '<div class="group"><h2>Install</h2><p class="note">Add Case Closed to your home screen so it opens like an app.</p><div class="row"><button type="button" class="btn" data-act="install">Install app</button></div></div>' : '') +
+    '<div class="group"><h2>Your progress</h2><p class="note">' + total + ' series' + ' in your lists, saved on this device only. Download a backup now and then, and before clearing browser data or changing phones.</p>' +
+      '<div class="row"><button type="button" class="btn ghost" data-act="export">Download backup</button><label class="btn ghost" for="import-file">Restore a backup</label><input id="import-file" type="file" accept="application/json,.json" hidden></div></div>' +
+    '<div class="group"><label class="h" for="key-change">TMDB key</label><p class="note">Current key: ' + esc(masked) + '</p><input id="key-change" class="field" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste a new key">' +
+      '<p id="key-err" class="err" hidden></p><div class="row"><button type="button" class="btn ghost" data-act="key-save">Save key</button></div></div>' +
+    '<div class="group"><h2>Saved series data</h2><p class="note">Titles and season counts are kept on this device to load faster. Clearing them does not touch your progress.</p><div class="row"><button type="button" class="btn ghost" data-act="clear-cache">Clear saved data</button></div></div>' +
+    '<div class="group"><h2>Recent requests</h2><p class="note">If something fails to load, these lines show what TMDB answered.</p><div class="mono" id="diag">' + esc(diag.join('\n') || 'No requests yet.') + '</div></div>' +
+    '<div class="group"><h2>About</h2><p class="note">Series data and images come from <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This product uses the TMDB API but is not endorsed or certified by TMDB.</p></div>' +
+    '</div></div>';
+}
+function exportBackup() {
+  const data = JSON.stringify({ app: 'case-closed', version: 1, exported: new Date().toISOString(), lib: S.lib }, null, 1);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = 'case-closed-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('Backup downloaded');
+}
+function importBackup(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let lib = null;
+    try { const j = JSON.parse(String(reader.result)); lib = cleanLib(j && j.lib); } catch (e) { lib = null; }
+    const n = lib ? Object.keys(lib).length : 0;
+    if (!n) { toast("That file isn't a Case Closed backup."); return; }
+    if (!window.confirm('Replace the progress on this device with the backup (' + n + ' series)?')) return;
+    S.lib = lib;
+    saveLib();
+    pendingReload = true;
+    paintSettings();
+    toast('Backup restored');
+  };
+  reader.readAsText(file);
+}
+async function checkKey(key) {
+  await tmdb('/configuration', null, key);
+}
+
+/* ---------- views and routing ---------- */
+const views = { setup: $('#view-setup'), list: $('#view-list'), show: $('#view-show') };
+const sheets = { filters: $('#sheet-filters'), settings: $('#sheet-settings') };
+let current = null, openSheet = null, listScroll = 0, listReady = false, pendingReload = false;
+function showView(name, sheet) {
+  if (current === 'list' && name !== 'list') listScroll = window.scrollY;
+  for (const k of Object.keys(views)) views[k].hidden = k !== name;
+  for (const k of Object.keys(sheets)) sheets[k].hidden = k !== sheet;
+  document.body.classList.toggle('locked', !!sheet);
+  const back = name === 'list' && current !== 'list';
+  if (name === 'show') window.scrollTo(0, 0);
+  current = name;
+  openSheet = sheet || null;
+  if (back) requestAnimationFrame(() => window.scrollTo(0, listScroll));
+}
+function ensureList() {
+  if (!listReady || pendingReload) { listReady = true; pendingReload = false; listScroll = 0; window.scrollTo(0, 0); refreshList(); }
+  else { paintTabs(); if (S.tab !== 'all') paintLibrary(); }
+}
+function route() {
+  if (!S.key) { showView('setup'); return; }
+  const h = location.hash || '#/';
+  const m = h.match(/^#\/show\/(\d+)$/);
+  if (m) { showView('show'); openShow(Number(m[1])); return; }
+  if (h === '#/filters') { showView('list', 'filters'); openFilters(); if (!listReady) ensureList(); return; }
+  if (h === '#/settings') { showView('list', 'settings'); paintSettings(); if (!listReady) ensureList(); return; }
+  showView('list');
+  ensureList();
+}
+try { history.scrollRestoration = 'manual'; } catch (e) { /* older browsers */ }
+const stack = [location.hash || '#/'];
+window.addEventListener('hashchange', () => {
+  const h = location.hash || '#/';
+  if (stack.length > 1 && stack[stack.length - 2] === h) stack.pop(); else stack.push(h);
+  route();
+});
+function goBack() {
+  if (stack.length > 1) history.back(); else location.hash = '#/';
+}
+
+/* ---------- events ---------- */
+$('#setup-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const key = $('#key-input').value.trim();
+  const err = $('#setup-err'), btn = $('#setup-go');
+  err.hidden = true;
+  if (!key) { err.textContent = 'Paste your TMDB key first.'; err.hidden = false; return; }
+  btn.disabled = true; btn.textContent = 'Checking…';
+  try {
+    await checkKey(key);
+    S.key = key;
+    if (!store.set(LS.key, key)) toast("The key couldn't be saved on this device, so you'll be asked again next time.");
+    route();
+  } catch (e) {
+    err.textContent = e.kind === 'auth' ? "TMDB didn't accept this key. Copy the value labelled API Key and try again." : errorText(e);
+    err.hidden = false;
+  } finally { btn.disabled = false; btn.textContent = 'Save and open'; }
+});
+
+let qTimer = 0;
+$('#q').addEventListener('input', (ev) => {
+  clearTimeout(qTimer);
+  const v = ev.target.value;
+  qTimer = setTimeout(() => {
+    S.q = v;
+    if (!v.trim()) S.searchAll = false;
+    if (S.tab === 'all') { window.scrollTo(0, 0); startBrowse(); } else paintLibrary();
+  }, 350);
+});
+$('#q').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') ev.target.blur(); });
+
+document.addEventListener('click', (ev) => {
+  const t = ev.target instanceof Element ? ev.target : null;
+  if (!t) return;
+  let el;
+  if ((el = t.closest('[data-back]'))) { ev.preventDefault(); goBack(); return; }
+  if ((el = t.closest('[data-tab]'))) {
+    S.tab = el.dataset.tab;
+    window.scrollTo(0, 0);
+    refreshList();
+    return;
+  }
+  if ((el = t.closest('[data-clear]'))) { clearFilter(el.dataset.clear); return; }
+  if ((el = t.closest('[data-person]'))) { filterByPerson(el.dataset.person, el.dataset.name, el.dataset.dept); return; }
+  if ((el = t.closest('[data-f]'))) { draftSet(el.dataset.f, el.dataset.v); return; }
+  if ((el = t.closest('[data-choose]'))) { draft[el.dataset.choose] = { id: Number(el.dataset.id), name: el.dataset.name }; paintFilters(); return; }
+  if ((el = t.closest('[data-unpick]'))) { draft[el.dataset.unpick] = null; paintFilters(); return; }
+  if (t.closest('#want') && showing && showing.name) {
+    const e = entryFor(showing);
+    e.want = !e.want; e.u = Date.now();
+    tidyEntry(showing.id); saveLib(); paintTrack(showing);
+    return;
+  }
+  if (t.closest('#mark-all') && showing && showing.name) {
+    const nums = seasonsOf(showing).map((s) => s.season_number);
+    const info = trackInfo(showing);
+    setSeen(showing, nums, !(info.total && info.seen >= info.total));
+    return;
+  }
+  if ((el = t.closest('[data-act]'))) {
+    const act = el.dataset.act;
+    if (act === 'retry' || act === 'more') { if (browse) { browse.error = null; browse.stalled = false; } loadMore(); }
+    else if (act === 'search-all') { S.searchAll = true; window.scrollTo(0, 0); startBrowse(); }
+    else if (act === 'search-scope') { S.searchAll = false; window.scrollTo(0, 0); startBrowse(); }
+    else if (act === 'reset-filters') { S.filters = clone(DEFAULT_FILTERS); saveFilters(); refreshList(); }
+    else if (act === 'reload-show' && showing) openShow(showing.id);
+    else if (act === 'filters-reset') { draft = clone(DEFAULT_FILTERS); paintFilters(); }
+    else if (act === 'filters-apply') {
+      S.filters = cleanFilters(draft);
+      saveFilters();
+      S.tab = 'all'; S.q = ''; $('#q').value = ''; S.searchAll = false;
+      listScroll = 0; pendingReload = true;
+      goBack();
+    }
+    else if (act === 'export') exportBackup();
+    else if (act === 'install' && installEvent) { installEvent.prompt(); installEvent = null; paintSettings(); }
+    else if (act === 'clear-cache') { metaMem.clear(); fullMem.clear(); store.del(LS.meta); store.del(LS.kw); store.del(LS.nets); S.focusMap = null; S.badNets = null; browse = null; pendingReload = true; toast('Saved series data cleared'); }
+    else if (act === 'key-save') {
+      const input = $('#key-change'), err = $('#key-err');
+      const key = input.value.trim();
+      err.hidden = true;
+      if (!key) return;
+      el.disabled = true;
+      checkKey(key).then(() => { S.key = key; store.set(LS.key, key); browse = null; pendingReload = true; paintSettings(); toast('Key saved'); })
+        .catch((e) => { err.textContent = e.kind === 'auth' ? "TMDB didn't accept this key." : errorText(e); err.hidden = false; })
+        .finally(() => { el.disabled = false; });
+    }
+  }
+});
+document.addEventListener('change', (ev) => {
+  const t = ev.target;
+  if (!(t instanceof HTMLInputElement)) return;
+  if (t.dataset.season && showing && showing.name) setSeen(showing, [Number(t.dataset.season)], t.checked);
+  else if (t.dataset.toggle && draft) draft[t.dataset.toggle] = t.checked;
+  else if (t.id === 'import-file' && t.files && t.files[0]) { importBackup(t.files[0]); t.value = ''; }
+});
+document.addEventListener('input', (ev) => {
+  const t = ev.target;
+  if (t instanceof HTMLInputElement && t.dataset.pick) pickSearch(t.dataset.pick, t.value);
+});
+
+if ('IntersectionObserver' in window) {
+  new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) nearEnd(); }, { rootMargin: '700px 0px' }).observe($('#sentinel'));
+} else {
+  window.addEventListener('scroll', nearEnd, { passive: true });
+}
+
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+
+route();
+})();
+</script>
+</body>
+</html>
