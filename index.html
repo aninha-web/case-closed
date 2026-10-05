@@ -126,6 +126,10 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .cap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .cap-name { font-size: 13px; line-height: 18px; font-weight: 600; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .cap-meta { font-size: 12px; line-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.card.done .poster { opacity: .32; filter: grayscale(.6); }
+.card.done .cap-name { color: var(--muted); }
+.poster .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0, 0, 0, .65); }
+.poster .bar i { display: block; height: 100%; background: var(--accent); }
 .skel .poster, .skel .bar { background: var(--surface); animation: pulse 1.4s ease-in-out infinite; }
 .skel .bar { height: 12px; border-radius: 4px; width: 80%; }
 .skel .bar.short { width: 55%; }
@@ -588,8 +592,23 @@ function caption(m) {
   return parts.join(' · ');
 }
 function cardHTML(m) {
-  return '<a class="card" href="#/show/' + m.id + '">' + posterHTML(m.p, m.n, m.id) +
+  return '<a class="card" data-id="' + m.id + '" href="#/show/' + m.id + '">' + posterHTML(m.p, m.n, m.id) +
     '<div class="cap"><div class="cap-name">' + esc(m.n) + '</div><div class="cap-meta">' + esc(caption(m)) + '</div></div></a>';
+}
+/* marks each cover from the library: faded when completed (All tab only), a progress bar while watching */
+function syncCards() {
+  document.querySelectorAll('#grid .card[data-id]').forEach((card) => {
+    const e = S.lib[Number(card.dataset.id)];
+    const st = statusOf(e);
+    card.classList.toggle('done', st === 'completed' && S.tab === 'all');
+    const poster = card.querySelector('.poster');
+    if (!poster) return;
+    let bar = poster.querySelector('.bar');
+    if (st === 'watching' && e.s > 0) {
+      if (!bar) { poster.insertAdjacentHTML('beforeend', '<span class="bar"><i></i></span>'); bar = poster.querySelector('.bar'); }
+      bar.firstElementChild.style.width = Math.max(8, Math.round((e.seen.length / e.s) * 100)) + '%';
+    } else if (bar) bar.remove();
+  });
 }
 const skeletonHTML = (n) => Array.from({ length: n }, () => '<div class="card skel" aria-hidden="true"><div class="poster"></div><div class="cap"><div class="bar"></div><div class="bar short"></div></div></div>').join('');
 
@@ -598,7 +617,7 @@ document.addEventListener('error', (ev) => {
   if (!(img instanceof HTMLImageElement)) return;
   const box = img.parentElement;
   if (!box) return;
-  if (box.classList.contains('poster')) box.innerHTML = '<span class="poster-title">' + esc(img.dataset.name || '') + '</span>';
+  if (box.classList.contains('poster')) { const t = document.createElement('span'); t.className = 'poster-title'; t.textContent = img.dataset.name || ''; img.replaceWith(t); }
   else if (box.classList.contains('avatar')) box.textContent = initials(img.dataset.name || '');
 }, true);
 
@@ -672,6 +691,7 @@ function startBrowse() {
 function paintBrowse() {
   if (S.tab !== 'all' || !browse) return;
   $('#grid').innerHTML = browse.items.map(cardHTML).join('');
+  syncCards();
   paintUnder();
   paintState();
 }
@@ -717,7 +737,7 @@ async function loadMore() {
           if (!m || b.ids.has(m.id) || !passesMeta(m, f, how)) continue;
           b.ids.add(m.id); b.items.push(m); html += cardHTML(m); added++;
         }
-        if (html && S.tab === 'all') $('#grid').insertAdjacentHTML('beforeend', html);
+        if (html && S.tab === 'all') { $('#grid').insertAdjacentHTML('beforeend', html); syncCards(); }
         rounds++;
         if (b.page >= b.pages || !(r.results || []).length) b.done = true;
       }
@@ -760,7 +780,7 @@ async function loadPerson(b, f) {
   b.ids = new Set(b.items.map((m) => m.id));
   b.total = b.items.length;
   b.done = true;
-  if (S.tab === 'all') $('#grid').innerHTML = b.items.map(cardHTML).join('');
+  if (S.tab === 'all') { $('#grid').innerHTML = b.items.map(cardHTML).join(''); syncCards(); }
   return b.items.length;
 }
 function nearEnd() {
@@ -865,6 +885,7 @@ function libItems() {
 function paintLibrary() {
   const items = libItems();
   $('#grid').innerHTML = items.map(cardHTML).join('');
+  syncCards();
   paintUnder();
   const empty = {
     watchlist: ['Your watchlist is empty', 'Open a series and tap “Add to watchlist” to keep it here.'],
@@ -1136,7 +1157,7 @@ function showView(name, sheet) {
 }
 function ensureList() {
   if (!listReady || pendingReload) { listReady = true; pendingReload = false; listScroll = 0; window.scrollTo(0, 0); refreshList(); }
-  else { paintTabs(); if (S.tab !== 'all') paintLibrary(); }
+  else { paintTabs(); if (S.tab !== 'all') paintLibrary(); else syncCards(); }
 }
 function route() {
   if (!S.key) { showView('setup'); return; }
