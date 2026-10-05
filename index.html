@@ -150,7 +150,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .hero-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .hero-info h1 { font-family: var(--display); font-weight: 700; font-size: 36px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; text-wrap: balance; }
 .facts { display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 20px; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.want-row { margin-top: auto; display: flex; }
+.want-row { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; }
 .want { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 22px; background: transparent; color: var(--text); font-size: 14px; font-weight: 600; }
 .want[aria-pressed="true"] { border-color: var(--line); background: var(--raised); }
 .want[aria-pressed="true"] svg { stroke: var(--accent); stroke-width: 2.5; }
@@ -208,6 +208,14 @@ a.person:hover { color: var(--text); }
 .seen-btn { display: flex; width: 100%; align-items: center; justify-content: center; gap: 10px; min-height: 52px; margin-bottom: 24px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent); color: var(--on-accent); font-size: 16px; font-weight: 600; }
 .seen-btn[aria-pressed="true"] { border-color: var(--line); background: var(--raised); color: var(--text); }
 .seen-btn svg { stroke: var(--accent); stroke-width: 2.5; }
+.picking .card .poster::after { content: ''; position: absolute; z-index: 2; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 12px; border: 2px solid #fff; background: rgba(14, 16, 20, .55); }
+.picking .card.sel .poster { opacity: 1; filter: none; }
+.picking .card.sel .poster::before { content: ''; position: absolute; z-index: 1; inset: 0; border: 3px solid var(--accent); border-radius: 6px; background: rgba(242, 182, 50, .22); }
+.picking .card.sel .poster::after { border-color: var(--accent); background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314110A' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 14px no-repeat; }
+.pickbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: flex; align-items: center; gap: 8px; padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--bg); }
+.pickbar span { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pickbar .btn { min-height: 44px; padding: 0 16px; }
+.has-pickbar { padding-bottom: 120px; }
 @media (max-width: 440px) { .tabs { gap: 13px; } .tab { font-size: 13px; gap: 5px; } }
 @media (max-width: 380px) { .tabs { gap: 9px; } .tab { font-size: 12.5px; gap: 4px; } }
 
@@ -376,6 +384,7 @@ let toastTimer = 0;
 function toast(msg) {
   const el = $('#toast');
   el.textContent = msg;
+  el.style.bottom = document.querySelector('.pickbar') ? 'calc(88px + env(safe-area-inset-bottom, 0px))' : '';
   el.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.hidden = true; }, 3200);
@@ -421,7 +430,7 @@ function cleanPeople(raw) {
     const e = raw[k];
     const id = Number(e && e.id);
     if (!id || !e.name) continue;
-    out[id] = { id, name: String(e.name), p: typeof e.p === 'string' && e.p ? e.p : null, added: Number(e.added) || Date.now() };
+    out[id] = { id, name: String(e.name), p: typeof e.p === 'string' && e.p ? e.p : null, added: Number(e.added) || Date.now(), hide: Array.isArray(e.hide) ? [...new Set(e.hide.filter((k) => /^[mt]\d+$/.test(String(k))))] : [] };
   }
   return out;
 }
@@ -692,6 +701,12 @@ function getPerson(id, force) {
     .finally(() => personJobs.delete(id));
   personJobs.set(id, job);
   return job;
+}
+const hiddenKeys = (id) => new Set((S.people[id] && S.people[id].hide) || []);
+/* an actor's list without the titles removed by hand; anything new on TMDB still shows up */
+function itemsFor(rec) {
+  const hid = hiddenKeys(rec.id);
+  return hid.size ? rec.items.filter((it) => !hid.has(it.k + it.id)) : rec.items;
 }
 const seenItem = (it) => (it.k === 'm' ? !!S.films[it.id] : statusOf(S.lib[it.id]) === 'completed');
 function getFilm(id) {
@@ -1089,9 +1104,10 @@ function actorRowHTML(p) {
   const rec = personMem.get(p.id);
   let meta = 'Titles load when you are online', pct = 0;
   if (rec) {
-    const seen = rec.items.filter(seenItem).length;
-    meta = seen + ' of ' + rec.items.length + ' seen';
-    pct = rec.items.length ? Math.round((seen / rec.items.length) * 100) : 0;
+    const items = itemsFor(rec);
+    const seen = items.filter(seenItem).length;
+    meta = seen + ' of ' + items.length + ' seen';
+    pct = items.length ? Math.round((seen / items.length) * 100) : 0;
   }
   return '<a class="arow" href="#/person/' + p.id + '">' + avatarHTML(p.p, p.name) + '<span class="arow-txt"><b>' + esc(p.name) + '</b><small>' + esc(meta) + '</small><span class="track thin"><i style="width:' + pct + '%"></i></span></span>' + ICON.chev + '</a>';
 }
@@ -1221,15 +1237,16 @@ function filterByPerson(id, name, dept) {
 /* ---------- actor page ---------- */
 let personToken = 0, personNow = null;
 const personFilter = {};
+const personPick = { on: false, sel: new Set() };
 function subShell(kind, id, inner) {
   return '<div class="show-top"><a class="icon-btn" href="#/" data-back aria-label="Back">' + ICON.back + '</a><a class="ext" href="https://www.themoviedb.org/' + kind + '/' + id + '" target="_blank" rel="noopener">View on TMDB</a></div>' + inner;
 }
 function titleCardHTML(it) {
   const y = yearOf(it.d);
   const name = '<div class="cap-name">' + esc(it.n) + '</div>';
-  if (it.k === 'm') return '<a class="card" data-film="' + it.id + '" href="#/film/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + '<div class="cap">' + name + '<div class="cap-meta">' + y + ' · Film</div></div></a>';
+  if (it.k === 'm') return '<a class="card" data-key="m' + it.id + '" data-film="' + it.id + '" href="#/film/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + '<div class="cap">' + name + '<div class="cap-meta">' + y + ' · Film</div></div></a>';
   const m = metaMem.get(it.id);
-  return '<a class="card" data-id="' + it.id + '" href="#/show/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + '<div class="cap">' + name + '<div class="cap-meta" data-cap="' + y + '">' + y + ' · ' + (m && m.s ? plural(m.s, 'season') : 'Series') + '</div></div></a>';
+  return '<a class="card" data-key="t' + it.id + '" data-id="' + it.id + '" href="#/show/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + '<div class="cap">' + name + '<div class="cap-meta" data-cap="' + y + '">' + y + ' · ' + (m && m.s ? plural(m.s, 'season') : 'Series') + '</div></div></a>';
 }
 /* season counts are not part of an actor's credits, so they are looked up per series and filled in */
 function fillSeasons(rec) {
@@ -1246,6 +1263,8 @@ function fillSeasons(rec) {
 async function openPerson(id, back) {
   const token = ++personToken;
   const el = $('#view-person');
+  personPick.on = false;
+  personPick.sel.clear();
   let rec = personMem.get(id);
   if (rec) {
     personNow = rec;
@@ -1270,23 +1289,61 @@ async function openPerson(id, back) {
   paintPerson(rec);
 }
 function paintPerson(rec) {
-  const f = personFilter[rec.id] || 'all';
-  const total = rec.items.length;
-  const films = rec.items.filter((it) => it.k === 'm').length;
-  const seen = rec.items.filter(seenItem).length;
-  const shown = rec.items.filter((it) => f === 'all' || (f === 'films' ? it.k === 'm' : it.k === 't'));
+  const hid = hiddenKeys(rec.id);
+  const items = rec.items.filter((it) => !hid.has(it.k + it.id));
+  const removed = rec.items.filter((it) => hid.has(it.k + it.id));
+  let f = personFilter[rec.id] || 'all';
+  if (f === 'hidden' && !removed.length) f = personFilter[rec.id] = 'all';
+  const total = items.length;
+  const films = items.filter((it) => it.k === 'm').length;
+  const seen = items.filter(seenItem).length;
+  const shown = f === 'hidden' ? removed : items.filter((it) => f === 'all' || (f === 'films' ? it.k === 'm' : it.k === 't'));
   const following = !!S.people[rec.id];
+  if (!following || !shown.length) { personPick.on = false; personPick.sel.clear(); }
+  const picking = personPick.on;
   let html = '<div class="phero">' + avatarHTML(rec.p, rec.name, true) + '<div class="phero-info"><h1>' + esc(rec.name) + '</h1>' +
     '<div class="facts"><div>' + plural(total, 'title') + ' · ' + plural(films, 'film') + ' · ' + (total - films) + ' series</div></div>' +
-    '<div class="want-row"><button type="button" class="want follow" id="follow" aria-pressed="' + following + '">' + (following ? ICON.check + 'Following' : ICON.plus + 'Follow') + '</button></div></div></div>';
+    '<div class="want-row"><button type="button" class="want follow" id="follow" aria-pressed="' + following + '">' + (following ? ICON.check + 'Following' : ICON.plus + 'Follow') + '</button>' +
+    (following && shown.length ? '<button type="button" class="want" id="pick-toggle" aria-pressed="' + picking + '">' + (picking ? 'Cancel' : 'Select') + '</button>' : '') + '</div></div></div>';
   html += '<div class="progress"><div class="progress-row"><b>Seen</b><span>' + seen + ' of ' + plural(total, 'title') + '</span></div><div class="track"><i style="width:' + (total ? Math.round((seen / total) * 100) : 0) + '%"></i></div></div>';
-  html += '<div class="pchips">' + [['all', 'All'], ['films', 'Films'], ['series', 'Series']].map((c) => '<button type="button" class="chip" data-pf="' + c[0] + '" aria-pressed="' + (f === c[0]) + '">' + c[1] + '</button>').join('') + '</div>';
+  const chips = [['all', 'All'], ['films', 'Films'], ['series', 'Series']];
+  if (removed.length) chips.push(['hidden', 'Removed ' + removed.length]);
+  html += '<div class="pchips">' + chips.map((c) => '<button type="button" class="chip" data-pf="' + c[0] + '" aria-pressed="' + (f === c[0]) + '">' + c[1] + '</button>').join('') + '</div>';
+  if (picking) html += '<p class="note" style="margin-bottom:16px">' + (f === 'hidden' ? 'Tap the titles you want back on this list.' : 'Tap the titles you want off this list. They stop counting here, and you can bring them back under Removed.') + '</p>';
   html += shown.length
-    ? '<div class="grid" id="person-grid">' + shown.map(titleCardHTML).join('') + '</div>'
-    : '<div class="state"><strong>Nothing here</strong><p>' + (total ? 'No ' + (f === 'films' ? 'films' : 'series') + ' listed for this person.' : 'TMDB lists no released films or series for this person.') + '</p></div>';
-  $('#view-person').innerHTML = subShell('person', rec.id, html);
+    ? '<div class="grid' + (picking ? ' picking' : '') + '" id="person-grid">' + shown.map(titleCardHTML).join('') + '</div>'
+    : '<div class="state"><strong>Nothing here</strong><p>' + (rec.items.length ? 'No ' + (f === 'films' ? 'films' : f === 'series' ? 'series' : 'titles') + ' on this list.' : 'TMDB lists no released films or series for this person.') + '</p></div>';
+  if (picking) html += '<div class="pickbar"><span id="pick-count"></span><button type="button" class="btn ghost" data-act="pick-cancel">Cancel</button><button type="button" class="btn" id="pick-apply" data-act="pick-apply">' + (f === 'hidden' ? 'Restore' : 'Remove') + '</button></div>';
+  const el = $('#view-person');
+  el.classList.toggle('has-pickbar', picking);
+  el.innerHTML = subShell('person', rec.id, html);
+  if (picking) {
+    document.querySelectorAll('#person-grid .card').forEach((card) => card.classList.toggle('sel', personPick.sel.has(card.dataset.key)));
+    paintPick();
+  }
   syncCards();
   fillSeasons(rec);
+}
+function paintPick() {
+  const n = personPick.sel.size;
+  const count = $('#pick-count');
+  if (count) count.textContent = n + ' selected';
+  const apply = $('#pick-apply');
+  if (apply) apply.disabled = !n;
+}
+function applyPick() {
+  if (!personNow || !S.people[personNow.id] || !personPick.sel.size) return;
+  const person = S.people[personNow.id];
+  const restoring = (personFilter[personNow.id] || 'all') === 'hidden';
+  const hide = new Set(person.hide || []);
+  for (const key of personPick.sel) { if (restoring) hide.delete(key); else hide.add(key); }
+  const n = personPick.sel.size;
+  person.hide = [...hide];
+  savePeople();
+  personPick.on = false;
+  personPick.sel.clear();
+  paintPerson(personNow);
+  toast(plural(n, 'title') + (restoring ? ' back on this list' : ' removed from this list'));
 }
 
 /* ---------- film page ---------- */
@@ -1552,6 +1609,20 @@ document.addEventListener('click', (ev) => {
   const t = ev.target instanceof Element ? ev.target : null;
   if (!t) return;
   let el;
+  if (personPick.on && current === 'person' && (el = t.closest('#person-grid .card'))) {
+    ev.preventDefault();
+    const key = el.dataset.key;
+    if (personPick.sel.has(key)) personPick.sel.delete(key); else personPick.sel.add(key);
+    el.classList.toggle('sel', personPick.sel.has(key));
+    paintPick();
+    return;
+  }
+  if (t.closest('#pick-toggle') && personNow) {
+    personPick.on = !personPick.on;
+    personPick.sel.clear();
+    paintPerson(personNow);
+    return;
+  }
   if ((el = t.closest('[data-back]'))) { ev.preventDefault(); goBack(); return; }
   if ((el = t.closest('[data-tab]'))) {
     if ((el.dataset.tab === 'actors') !== (S.tab === 'actors')) { clearTimeout(qTimer); S.q = ''; $('#q').value = ''; S.searchAll = false; actorSug.list = null; actorSug.token++; }
@@ -1580,7 +1651,7 @@ document.addEventListener('click', (ev) => {
   if ((el = t.closest('[data-follow]'))) {
     const id = Number(el.dataset.follow);
     if (!S.people[id]) {
-      S.people[id] = { id: id, name: el.dataset.name, p: el.dataset.profile || null, added: Date.now() };
+      S.people[id] = { id: id, name: el.dataset.name, p: el.dataset.profile || null, added: Date.now(), hide: [] };
       savePeople();
       toast('Following ' + el.dataset.name);
     }
@@ -1590,13 +1661,16 @@ document.addEventListener('click', (ev) => {
   }
   if (t.closest('#follow') && personNow) {
     const id = personNow.id;
-    if (S.people[id]) delete S.people[id];
-    else S.people[id] = { id: id, name: personNow.name, p: personNow.p, added: Date.now() };
+    if (S.people[id]) {
+      if ((S.people[id].hide || []).length && !window.confirm('Stop following ' + personNow.name + '? The titles you removed from this list will come back.')) return;
+      delete S.people[id];
+    }
+    else S.people[id] = { id: id, name: personNow.name, p: personNow.p, added: Date.now(), hide: [] };
     savePeople(); saveCredits();
     paintPerson(personNow);
     return;
   }
-  if ((el = t.closest('[data-pf]')) && personNow) { personFilter[personNow.id] = el.dataset.pf; paintPerson(personNow); return; }
+  if ((el = t.closest('[data-pf]')) && personNow) { personFilter[personNow.id] = el.dataset.pf; personPick.sel.clear(); paintPerson(personNow); return; }
   if (t.closest('#film-seen') && filmNow) {
     const id = filmNow.id;
     if (S.films[id]) delete S.films[id];
@@ -1613,6 +1687,8 @@ document.addEventListener('click', (ev) => {
     else if (act === 'reset-filters') { S.filters = clone(DEFAULT_FILTERS); saveFilters(); refreshList(); }
     else if (act === 'reload-show' && showing) openShow(showing.id);
     else if (act === 'reload-person') openPerson(Number(el.dataset.id));
+    else if (act === 'pick-cancel' && personNow) { personPick.on = false; personPick.sel.clear(); paintPerson(personNow); }
+    else if (act === 'pick-apply') applyPick();
     else if (act === 'reload-film') openFilm(Number(el.dataset.id));
     else if (act === 'filters-reset') { draft = clone(DEFAULT_FILTERS); paintFilters(); }
     else if (act === 'filters-apply') {
