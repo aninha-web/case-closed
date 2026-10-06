@@ -29,7 +29,7 @@
   --accent-hi: #FFD067;
   --on-accent: #14110A;
   --danger: #FF9B8A;
-  --display: 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  --display: 'Barlow Condensed', 'Roboto Condensed', sans-serif-condensed, 'Arial Narrow', sans-serif;
   --body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --gutter: 16px;
 }
@@ -48,7 +48,7 @@ body {
 body.locked { overflow: hidden; }
 [hidden] { display: none !important; }
 h1, h2, p { margin: 0; }
-button, input { font: inherit; color: inherit; }
+button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 a { color: var(--accent); }
 a:hover { color: var(--accent-hi); }
@@ -91,8 +91,15 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .setup label { font-weight: 600; font-size: 14px; }
 
 /* list */
-.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-block: 20px 12px; }
-.top p { margin-top: 6px; font-size: 13px; line-height: 18px; color: var(--muted); }
+.top { display: flex; flex-direction: column; gap: 8px; padding-block: 18px 12px; }
+.top-row { display: flex; align-items: center; gap: 12px; }
+.top-row .logo { flex: 1; min-width: 0; font-size: clamp(26px, 7.8vw, 34px); white-space: nowrap; }
+.me { flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--accent); border-radius: 22px; background: var(--raised); color: var(--text); }
+.me:hover { color: var(--text); }
+.me svg { width: 22px; height: 22px; }
+.me.big { width: 72px; height: 72px; border-radius: 36px; }
+.me.big svg { width: 34px; height: 34px; stroke-width: 1.8; }
+.top p { font-size: 13px; line-height: 18px; color: var(--muted); }
 .sticky { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); padding-top: 8px; background: var(--bg); }
 .searchrow { display: flex; gap: 8px; }
 .search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); }
@@ -173,8 +180,29 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .created { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; font-size: 13px; color: var(--muted); }
 .seasons { display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); }
-.season { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 8px 16px; cursor: pointer; }
-.season + .season { border-top: 1px solid var(--line); }
+.srow + .srow { border-top: 1px solid var(--line); }
+.season { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 12px 8px 16px; }
+.season-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; min-height: 48px; cursor: pointer; }
+.score-btn { flex: none; min-width: 64px; height: 44px; padding: 0 12px; border: 1px solid var(--edge); border-radius: 22px; background: transparent; color: #D5D9E1; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.score-btn.has { border-color: var(--accent); background: rgba(242, 182, 50, .14); color: var(--accent); }
+.picker { display: flex; flex-direction: column; gap: 10px; padding: 4px 16px 12px; }
+.nums { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.num { height: 44px; padding: 0; border: 1px solid var(--edge); border-radius: 10px; background: transparent; color: var(--text); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.num[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.num[disabled] { opacity: .4; }
+.picker-foot { display: flex; justify-content: space-between; }
+.marks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.marks .chip { min-height: 48px; border-radius: 24px; font-size: 15px; font-weight: 600; }
+.cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.cards .progress { margin-bottom: 0; }
+.scorecard { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-radius: 10px; background: var(--surface); }
+.scorecard b { display: block; font-size: 13px; line-height: 20px; font-weight: 600; color: var(--accent); }
+.scorecard small { font-size: 12px; line-height: 16px; color: var(--muted); }
+.scorecard .avg { display: flex; align-items: baseline; gap: 4px; font-variant-numeric: tabular-nums; }
+.scorecard .avg span { font-family: var(--display); font-weight: 700; font-size: 44px; line-height: 1; }
+.scorecard .avg i { font-style: normal; font-size: 14px; color: var(--muted); }
+.note-box { display: block; width: 100%; min-height: 132px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 14px; line-height: 22px; resize: vertical; }
+.note-box::placeholder { color: var(--muted); }
 .season input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .season .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .season .txt b { font-size: 15px; line-height: 20px; font-weight: 600; }
@@ -218,6 +246,7 @@ a.person:hover { color: var(--text); }
 .has-pickbar { padding-bottom: 120px; }
 @media (max-width: 440px) { .tabs { gap: 13px; } .tab { font-size: 13px; gap: 5px; } }
 @media (max-width: 380px) { .tabs { gap: 9px; } .tab { font-size: 12.5px; gap: 4px; } }
+@media (max-width: 380px) { .search { gap: 8px; padding: 0 10px; } .search input { font-size: 14px; } .filter-btn { gap: 6px; padding: 0 10px; } }
 
 /* sheets */
 .sheet { position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--bg); padding-top: env(safe-area-inset-top, 0px); }
@@ -265,13 +294,16 @@ a.person:hover { color: var(--text); }
 
 <main id="view-list" class="wrap" hidden>
   <header class="top">
-    <div>
+    <div class="top-row">
+      <a class="me" href="#/profile" aria-label="Open my profile">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"></path></svg>
+      </a>
       <h1 class="logo">Case <span>Closed</span></h1>
-      <p>Finished crime series in English, from 1990 on</p>
-    </div>
-    <a class="icon-btn" href="#/settings" aria-label="Settings">
+      <a class="icon-btn" href="#/settings" aria-label="Settings">
       <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg>
-    </a>
+      </a>
+    </div>
+    <p>Finished crime series in English, from 1990 on</p>
   </header>
   <div class="sticky">
     <div class="searchrow">
@@ -298,6 +330,7 @@ a.person:hover { color: var(--text); }
 <main id="view-show" class="wrap narrow" hidden></main>
 <main id="view-person" class="wrap narrow" hidden></main>
 <main id="view-film" class="wrap narrow" hidden></main>
+<main id="view-profile" class="wrap narrow" hidden></main>
 
 <div id="sheet-filters" class="sheet" hidden></div>
 <div id="sheet-settings" class="sheet" hidden></div>
@@ -348,7 +381,7 @@ const SEASONS = [
 ];
 const RATINGS = [{ v: null, label: 'Any' }, { v: 7, label: '7 or more' }, { v: 8, label: '8 or more' }];
 const DEFAULT_FILTERS = { sort: 'popular', actor: null, creator: null, genres: ['crime'], focus: [], decade: null, country: null, network: null, seasons: null, rating: null, canceled: true, unscripted: false };
-const TABS = [['all', 'All'], ['watchlist', 'Watchlist'], ['watching', 'Watching'], ['completed', 'Completed'], ['actors', 'Actors']];
+const TABS = [['all', 'All'], ['interested', 'Interested'], ['completed', 'Completed'], ['actors', 'Actors']];
 const TILES = ['#1F3350', '#17434A', '#4A3A1C', '#5A2328', '#2F3F2A', '#5C3A1E', '#2B2F45', '#4E1F2B', '#1F4035', '#3A2F55', '#3B3F47', '#25404F'];
 
 const ICON = {
@@ -357,6 +390,7 @@ const ICON = {
   check: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>',
   mark: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"></path></svg>',
   plus: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>',
+  me: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"></path></svg>',
   chev: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>'
 };
 
@@ -414,10 +448,19 @@ function cleanLib(raw) {
     const e = raw[k];
     const id = Number(e && e.id);
     if (!id || !e.n) continue;
+    const sc = {};
+    if (e.sc && typeof e.sc === 'object') {
+      for (const key of Object.keys(e.sc)) {
+        const n = Number(key), v = Number(e.sc[key]);
+        if (n > 0 && e.sc[key] !== null && v >= 0 && v <= 10) sc[n] = Math.round(v * 2) / 2;
+      }
+    }
     out[id] = {
       id, n: String(e.n), y: Number(e.y) || null, e: Number(e.e) || null, p: typeof e.p === 'string' ? e.p : null,
       s: Number(e.s) || 0, seen: Array.isArray(e.seen) ? [...new Set(e.seen.map(Number).filter((n) => n > 0))] : [],
-      want: !!e.want, u: Number(e.u) || Date.now()
+      mark: e.mark === 'i' || e.mark === 'w' ? e.mark : (e.want ? 'i' : null),
+      sc: sc, note: typeof e.note === 'string' ? e.note.slice(0, 5000) : '',
+      u: Number(e.u) || Date.now()
     };
   }
   return out;
@@ -612,19 +655,21 @@ const networkOk = (id) => !(S.badNets && S.badNets.includes(id));
 function saveLib() {
   if (!store.set(LS.lib, S.lib)) toast("Couldn't save on this device. Storage may be full or blocked.");
 }
+const isDone = (e) => !!e && e.s > 0 && e.seen.length >= e.s;
+/* which list a series is on: completed once every season is ticked, otherwise only what was picked by hand */
 function statusOf(e) {
   if (!e) return null;
-  const seen = e.seen.length;
-  if (e.s > 0 && seen >= e.s) return 'completed';
-  if (seen > 0) return 'watching';
-  if (e.want) return 'watchlist';
+  if (isDone(e)) return 'completed';
+  if (e.mark === 'i') return 'interested';
+  if (e.mark === 'w') return 'watching';
   return null;
 }
 function libCounts() {
-  const c = { watchlist: 0, watching: 0, completed: 0 };
+  const c = { interested: 0, watching: 0, completed: 0 };
   for (const id of Object.keys(S.lib)) { const st = statusOf(S.lib[id]); if (st) c[st]++; }
   return c;
 }
+const fmtScore = (v) => (v % 1 ? v.toFixed(1) : String(v));
 function seasonsOf(d) {
   const list = (d.seasons || []).filter((s) => s.season_number >= 1).sort((a, b) => a.season_number - b.season_number);
   if (list.length) return list;
@@ -633,7 +678,7 @@ function seasonsOf(d) {
 function entryFor(d) {
   const total = seasonsOf(d).length;
   let e = S.lib[d.id];
-  if (!e) e = S.lib[d.id] = { id: d.id, seen: [], want: false, u: Date.now() };
+  if (!e) e = S.lib[d.id] = { id: d.id, seen: [], mark: null, sc: {}, note: '', u: Date.now() };
   e.n = d.name || e.n || 'Untitled';
   e.y = yearOf(d.first_air_date) || e.y || null;
   e.e = yearOf(d.last_air_date) || e.e || null;
@@ -643,7 +688,7 @@ function entryFor(d) {
 }
 function tidyEntry(id) {
   const e = S.lib[id];
-  if (e && !e.want && !e.seen.length) delete S.lib[id];
+  if (e && !e.mark && !e.seen.length && !Object.keys(e.sc || {}).length && !(e.note || '').trim()) delete S.lib[id];
 }
 
 /* ---------- people and films ---------- */
@@ -746,10 +791,9 @@ function syncCards() {
     if (card.dataset.film) done = !!S.films[card.dataset.film];
     else {
       const e = S.lib[Number(card.dataset.id)];
-      const st = statusOf(e);
       const ownList = !!card.closest('#grid') && S.tab !== 'all';
-      done = st === 'completed' && !ownList;
-      if (st === 'watching' && e.s > 0) pct = Math.max(8, Math.round((e.seen.length / e.s) * 100));
+      done = isDone(e) && !ownList;
+      if (e && e.s > 0 && e.seen.length > 0 && !isDone(e)) pct = Math.max(8, Math.round((e.seen.length / e.s) * 100));
     }
     card.classList.toggle('done', done);
     const poster = card.querySelector('.poster');
@@ -839,8 +883,14 @@ function startBrowse() {
   if (b.mode === 'search') loadPeople(S.q.trim());
   loadMore();
 }
+function dropDone() {
+  if (!browse || browse.mode === 'search') return;
+  browse.items = browse.items.filter((m) => !isDone(S.lib[m.id]));
+  document.querySelectorAll('#grid .card[data-id]').forEach((card) => { if (isDone(S.lib[Number(card.dataset.id)])) card.remove(); });
+}
 function paintBrowse() {
   if (S.tab !== 'all' || !browse) return;
+  if (browse.mode !== 'search') browse.items = browse.items.filter((m) => !isDone(S.lib[m.id]));
   $('#grid').innerHTML = browse.items.map(cardHTML).join('');
   syncCards();
   paintUnder();
@@ -885,7 +935,7 @@ async function loadMore() {
         const how = b.mode === 'search' ? (S.searchAll ? 'all' : 'scope') : 'seasons';
         let html = '';
         for (const m of metas) {
-          if (!m || b.ids.has(m.id) || !passesMeta(m, f, how)) continue;
+          if (!m || b.ids.has(m.id) || !passesMeta(m, f, how) || (b.mode !== 'search' && isDone(S.lib[m.id]))) continue;
           b.ids.add(m.id); b.items.push(m); html += cardHTML(m); added++;
         }
         if (html && S.tab === 'all') { $('#grid').insertAdjacentHTML('beforeend', html); syncCards(); }
@@ -918,7 +968,7 @@ async function loadPerson(b, f) {
   const metas = await Promise.all(cands.map((c) => getMeta(c.id).catch(() => null)));
   if (b.token !== browseToken) return 0;
   const rows = [];
-  cands.forEach((c, i) => { const m = metas[i]; if (m && passesMeta(m, f, 'full')) rows.push({ c, m }); });
+  cands.forEach((c, i) => { const m = metas[i]; if (m && passesMeta(m, f, 'full') && !isDone(S.lib[m.id])) rows.push({ c, m }); });
   const by = {
     popular: (a, z) => (z.c.popularity || 0) - (a.c.popularity || 0),
     rating: (a, z) => (z.c.vote_average || 0) - (a.c.vote_average || 0),
@@ -1040,8 +1090,7 @@ function paintLibrary() {
   syncCards();
   paintUnder();
   const empty = {
-    watchlist: ['Your watchlist is empty', 'Open a series and tap “Add to watchlist” to keep it here.'],
-    watching: ['Nothing in progress', 'Tick the seasons you have seen on a series page and it shows up here.'],
+    interested: ['Nothing marked as Interested', 'Open a series and tap Interested to keep it here.'],
     completed: ['No completed series yet', 'A series moves here once every season is ticked.']
   }[S.tab];
   $('#list-state').innerHTML = items.length ? '' : '<div class="state"><strong>' + (S.q.trim() ? 'No matches' : empty[0]) + '</strong><p>' + (S.q.trim() ? 'Nothing in this list matches your search.' : empty[1]) + '</p></div>';
@@ -1132,6 +1181,8 @@ function showShell(inner) {
 async function openShow(id) {
   const token = ++showToken;
   const el = $('#view-show');
+  flushNote();
+  scoreOpen = null;
   const known = S.lib[id] || metaMem.get(id);
   showing = { id: id };
   el.innerHTML = showShell('<div class="hero"><div class="poster" style="--tile:' + TILES[id % TILES.length] + '"></div><div class="hero-info"><h1>' + esc(known ? known.n : 'Loading…') + '</h1><p class="note">Loading series details…</p></div></div>');
@@ -1148,14 +1199,18 @@ async function openShow(id) {
   paintShow(d);
 }
 function trackInfo(d) {
-  const total = seasonsOf(d).length;
+  const list = seasonsOf(d);
+  const total = list.length;
   const e = S.lib[d.id];
-  const seen = e ? e.seen.filter((n) => seasonsOf(d).some((s) => s.season_number === n)).length : 0;
+  const seen = e ? e.seen.filter((n) => list.some((s) => s.season_number === n)).length : 0;
+  const mark = e ? e.mark : null;
   let status = 'Not started';
   if (total > 0 && seen >= total) status = 'Completed';
-  else if (seen > 0) status = 'Watching';
-  else if (e && e.want) status = 'On your watchlist';
-  return { total, seen, status, want: !!(e && e.want), pct: total ? Math.round((seen / total) * 100) : 0 };
+  else if (mark === 'w') status = 'Watching';
+  else if (mark === 'i') status = 'Interested';
+  else if (seen > 0) status = 'In progress';
+  const scores = list.map((s) => (e && e.sc ? e.sc[s.season_number] : undefined)).filter((v) => v !== undefined && v !== null);
+  return { total, seen, status, mark, scores, pct: total ? Math.round((seen / total) * 100) : 0 };
 }
 function paintShow(d) {
   const el = $('#view-show');
@@ -1178,8 +1233,10 @@ function paintShow(d) {
   const e0 = S.lib[d.id];
   let html = '<div class="hero">' + posterHTML(d.poster_path, d.name, d.id) +
     '<div class="hero-info"><h1>' + esc(d.name) + '</h1><div class="facts">' + facts.map((f) => '<div>' + esc(f) + '</div>').join('') + '</div>' +
-    '<div class="want-row"><button type="button" class="want" id="want" aria-pressed="false"></button></div></div></div>';
-  html += '<div class="progress"><div class="progress-row"><b id="p-status"></b><span id="p-count"></span></div><div class="track"><i id="p-bar" style="width:0%"></i></div></div>';
+    '</div></div>';
+  html += '<div class="marks"><button type="button" class="chip" data-mark="i" aria-pressed="false">Interested</button><button type="button" class="chip" data-mark="w" aria-pressed="false">Watching</button></div>';
+  html += '<div class="cards"><div class="progress"><div class="progress-row"><b id="p-status"></b><span id="p-count"></span></div><div class="track"><i id="p-bar" style="width:0%"></i></div></div>' +
+    '<div class="scorecard" id="score-card" hidden><div><b>Your score</b><small id="score-note"></small></div><div class="avg"><span id="score-avg"></span><i>/ 10</i></div></div></div>';
   if (d.offline) html += '<p class="note" style="margin-bottom:24px">You’re offline, so only your saved progress is shown.</p>';
   if (d.overview) html += '<section class="sec"><h2 class="h-sec">Overview</h2><p>' + esc(d.overview) + '</p></section>';
   if (cast.length || creators.length) {
@@ -1189,27 +1246,78 @@ function paintShow(d) {
     html += '</section>';
   }
   if (seasons.length) {
-    html += '<section class="sec"><div class="sec-head"><h2 class="h-sec">Seasons</h2><button type="button" class="text-btn" id="mark-all"></button></div><div class="seasons">' +
-      seasons.map((s) => {
-        const meta = [yearOf(s.air_date), s.episode_count ? plural(s.episode_count, 'episode') : ''].filter(Boolean).join(' · ');
-        const on = !!(e0 && e0.seen.includes(s.season_number));
-        return '<label class="season"><input type="checkbox" id="season-' + s.season_number + '" data-season="' + s.season_number + '"' + (on ? ' checked' : '') + '><span class="txt"><b>Season ' + s.season_number + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span><span class="seen">Seen</span></label>';
-      }).join('') + '</div></section>';
+    html += '<section class="sec"><div class="sec-head"><h2 class="h-sec">Seasons</h2><button type="button" class="text-btn" id="mark-all"></button></div><div class="seasons" id="seasons-box"></div></section>';
   }
+  html += '<section class="sec"><label class="h-sec" for="note">Your comment</label><textarea id="note" class="note-box" rows="5" maxlength="5000" placeholder="What did you think of this series?"></textarea><p class="note">Saved on this device as you type.</p></section>';
   el.innerHTML = showShell(html);
+  const noteBox = $('#note');
+  if (noteBox) noteBox.value = (S.lib[d.id] && S.lib[d.id].note) || '';
+  paintSeasons(d);
   paintTrack(d);
+}
+let scoreOpen = null;
+function paintSeasons(d) {
+  const box = $('#seasons-box');
+  if (!box) return;
+  const e = S.lib[d.id];
+  box.innerHTML = seasonsOf(d).map((s) => {
+    const n = s.season_number;
+    const meta = [yearOf(s.air_date), s.episode_count ? plural(s.episode_count, 'episode') : ''].filter(Boolean).join(' \u00B7 ');
+    const on = !!(e && e.seen.includes(n));
+    const sc = e && e.sc ? e.sc[n] : undefined;
+    const has = sc !== undefined && sc !== null;
+    let html = '<div class="srow"><div class="season"><label class="season-main"><input type="checkbox" id="season-' + n + '" data-season="' + n + '"' + (on ? ' checked' : '') + '><span class="txt"><b>Season ' + n + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span></label>' +
+      '<button type="button" class="score-btn' + (has ? ' has' : '') + '" data-score-open="' + n + '" aria-expanded="' + (scoreOpen === n) + '" aria-label="' + (has ? 'Change your score for season ' + n : 'Score season ' + n) + '">' + (has ? fmtScore(sc) + ' / 10' : 'Score') + '</button></div>';
+    if (scoreOpen === n) {
+      const whole = has ? Math.floor(sc) : -1;
+      html += '<div class="picker"><div class="note">Your score for season ' + n + '. Tap .5 to add half a point.</div><div class="nums">' +
+        Array.from({ length: 11 }, (_, v) => '<button type="button" class="num" data-num="' + v + '" aria-pressed="' + (whole === v) + '">' + v + '</button>').join('') +
+        '<button type="button" class="num" data-half aria-label="Half a point" aria-pressed="' + (has && sc % 1 !== 0) + '"' + (has && sc >= 10 ? ' disabled' : '') + '>.5</button></div>' +
+        '<div class="picker-foot"><button type="button" class="text-btn" data-score-clear>Clear</button><button type="button" class="text-btn" data-score-done>Done</button></div></div>';
+    }
+    return html + '</div>';
+  }).join('');
+}
+function setScore(d, n, v) {
+  const e = entryFor(d);
+  if (!e.sc) e.sc = {};
+  if (v === null) delete e.sc[n]; else e.sc[n] = v;
+  e.u = Date.now();
+  tidyEntry(d.id);
+  saveLib();
+  paintSeasons(d);
+  paintTrack(d);
+}
+let noteTimer = 0;
+function flushNote() {
+  clearTimeout(noteTimer);
+  noteTimer = 0;
+  const box = $('#note');
+  if (!box || !showing || !showing.name) return;
+  const text = box.value.slice(0, 5000);
+  const cur = (S.lib[showing.id] && S.lib[showing.id].note) || '';
+  if (text === cur) return;
+  const e = entryFor(showing);
+  e.note = text;
+  e.u = Date.now();
+  tidyEntry(showing.id);
+  saveLib();
 }
 function paintTrack(d) {
   const t = trackInfo(d);
-  const want = $('#want');
-  if (want) {
-    want.setAttribute('aria-pressed', String(t.want));
-    want.innerHTML = t.want ? ICON.check + 'On my watchlist' : ICON.mark + 'Add to watchlist';
-  }
+  document.querySelectorAll('#view-show [data-mark]').forEach((b) => b.setAttribute('aria-pressed', String(t.mark === b.dataset.mark)));
   const st = $('#p-status'); if (st) st.textContent = t.status;
   const ct = $('#p-count'); if (ct) ct.textContent = t.total ? t.seen + ' of ' + plural(t.total, 'season') : '';
   const bar = $('#p-bar'); if (bar) bar.style.width = t.pct + '%';
   const all = $('#mark-all'); if (all) all.textContent = t.total && t.seen >= t.total ? 'Unmark all' : 'Mark all';
+  const card = $('#score-card');
+  if (card) {
+    card.hidden = !t.scores.length;
+    if (t.scores.length) {
+      $('#score-avg').textContent = (t.scores.reduce((a, b) => a + b, 0) / t.scores.length).toFixed(1);
+      $('#score-note').textContent = 'Average of ' + plural(t.scores.length, 'scored season');
+    }
+  }
   const e = S.lib[d.id];
   document.querySelectorAll('#view-show input[data-season]').forEach((box) => { box.checked = !!(e && e.seen.includes(Number(box.dataset.season))); });
 }
@@ -1232,6 +1340,20 @@ function filterByPerson(id, name, dept) {
   listScroll = 0;
   if (current === 'list' && !openSheet) refreshList();
   else { pendingReload = true; location.hash = '#/'; }
+}
+
+/* ---------- profile ---------- */
+function paintProfile() {
+  const c = libCounts();
+  const items = Object.keys(S.lib).map((id) => S.lib[id]).filter((e) => statusOf(e) === 'watching').sort((a, b) => b.u - a.u);
+  $('#view-profile').innerHTML = '<div class="show-top"><a class="icon-btn" href="#/" data-back aria-label="Back to the list">' + ICON.back + '</a></div>' +
+    '<div class="phero"><span class="me big">' + ICON.me + '</span><div class="phero-info"><h1>My profile</h1><div class="facts"><div>' + c.watching + ' watching \u00B7 ' + c.interested + ' interested \u00B7 ' + c.completed + ' completed</div></div></div></div>' +
+    '<section class="sec"><h2 class="h-sec">Watching now</h2>' +
+    (items.length
+      ? '<div class="grid" id="profile-grid">' + items.map((e) => '<a class="card" data-id="' + e.id + '" href="#/show/' + e.id + '">' + posterHTML(e.p, e.n, e.id) + '<div class="cap"><div class="cap-name">' + esc(e.n) + '</div><div class="cap-meta">' + (e.s ? e.seen.length + ' of ' + plural(e.s, 'season') : '') + '</div></div></a>').join('') + '</div>'
+      : '<p>Nothing here yet.</p>') +
+    '<p class="note">A series shows up here when you set it to Watching on its page. Ticking seasons alone does not add it.</p></section>';
+  syncCards();
 }
 
 /* ---------- actor page ---------- */
@@ -1478,7 +1600,7 @@ let installEvent = null;
 window.addEventListener('beforeinstallprompt', (ev) => { ev.preventDefault(); installEvent = ev; if (openSheet === 'settings') paintSettings(); });
 function paintSettings() {
   const c = libCounts();
-  const total = c.watchlist + c.watching + c.completed;
+  const total = Object.keys(S.lib).length;
   const masked = S.key ? S.key.slice(0, 4) + '…' + S.key.slice(-4) : '';
   $('#sheet-settings').innerHTML = '<div class="sheet-in"><div class="sheet-head"><a class="icon-btn" href="#/" data-back aria-label="Close settings">' + ICON.close + '</a><h1>Settings</h1></div><div class="sheet-body">' +
     (installEvent ? '<div class="group"><h2>Install</h2><p class="note">Add Case Closed to your home screen so it opens like an app.</p><div class="row"><button type="button" class="btn" data-act="install">Install app</button></div></div>' : '') +
@@ -1492,7 +1614,7 @@ function paintSettings() {
     '</div></div>';
 }
 function exportBackup() {
-  const data = JSON.stringify({ app: 'case-closed', version: 2, exported: new Date().toISOString(), lib: S.lib, films: S.films, people: S.people }, null, 1);
+  const data = JSON.stringify({ app: 'case-closed', version: 3, exported: new Date().toISOString(), lib: S.lib, films: S.films, people: S.people }, null, 1);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
   a.download = 'case-closed-backup-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -1526,7 +1648,7 @@ async function checkKey(key) {
 }
 
 /* ---------- views and routing ---------- */
-const views = { setup: $('#view-setup'), list: $('#view-list'), show: $('#view-show'), person: $('#view-person'), film: $('#view-film') };
+const views = { setup: $('#view-setup'), list: $('#view-list'), show: $('#view-show'), person: $('#view-person'), film: $('#view-film'), profile: $('#view-profile') };
 const sheets = { filters: $('#sheet-filters'), settings: $('#sheet-settings') };
 let current = null, openSheet = null, listScroll = 0, listReady = false, pendingReload = false;
 function showView(name, sheet) {
@@ -1535,14 +1657,14 @@ function showView(name, sheet) {
   for (const k of Object.keys(sheets)) sheets[k].hidden = k !== sheet;
   document.body.classList.toggle('locked', !!sheet);
   const back = name === 'list' && current !== 'list';
-  if (name === 'show' || name === 'film') window.scrollTo(0, 0);
+  if (name === 'show' || name === 'film' || name === 'profile') window.scrollTo(0, 0);
   current = name;
   openSheet = sheet || null;
   if (back) requestAnimationFrame(() => window.scrollTo(0, listScroll));
 }
 function ensureList() {
   if (!listReady || pendingReload) { listReady = true; pendingReload = false; listScroll = 0; window.scrollTo(0, 0); refreshList(); }
-  else { paintTabs(); if (S.tab === 'all') syncCards(); else if (S.tab === 'actors') paintActors(); else paintLibrary(); }
+  else { paintTabs(); if (S.tab === 'all') { dropDone(); syncCards(); } else if (S.tab === 'actors') paintActors(); else paintLibrary(); }
 }
 function route(back) {
   if (!S.key) { showView('setup'); return; }
@@ -1553,6 +1675,7 @@ function route(back) {
   if (mp) { showView('person'); openPerson(Number(mp[1]), back); return; }
   const mf = h.match(/^#\/film\/(\d+)$/);
   if (mf) { showView('film'); openFilm(Number(mf[1])); return; }
+  if (h === '#/profile') { showView('profile'); paintProfile(); return; }
   if (h === '#/filters') { showView('list', 'filters'); openFilters(); if (!listReady) ensureList(); return; }
   if (h === '#/settings') { showView('list', 'settings'); paintSettings(); if (!listReady) ensureList(); return; }
   showView('list');
@@ -1565,6 +1688,7 @@ let lastHash = location.hash || '#/';
 window.addEventListener('hashchange', () => {
   const h = location.hash || '#/';
   if (current === 'person') scrollMem[lastHash] = window.scrollY;
+  if (current === 'show') flushNote();
   const back = stack.length > 1 && stack[stack.length - 2] === h;
   if (back) stack.pop(); else stack.push(h);
   lastHash = h;
@@ -1636,11 +1760,31 @@ document.addEventListener('click', (ev) => {
   if ((el = t.closest('[data-f]'))) { draftSet(el.dataset.f, el.dataset.v); return; }
   if ((el = t.closest('[data-choose]'))) { draft[el.dataset.choose] = { id: Number(el.dataset.id), name: el.dataset.name }; paintFilters(); return; }
   if ((el = t.closest('[data-unpick]'))) { draft[el.dataset.unpick] = null; paintFilters(); return; }
-  if (t.closest('#want') && showing && showing.name) {
+  if ((el = t.closest('#view-show [data-mark]')) && showing && showing.name) {
     const e = entryFor(showing);
-    e.want = !e.want; e.u = Date.now();
+    e.mark = e.mark === el.dataset.mark ? null : el.dataset.mark;
+    e.u = Date.now();
     tidyEntry(showing.id); saveLib(); paintTrack(showing);
     return;
+  }
+  if ((el = t.closest('[data-score-open]')) && showing && showing.name) {
+    const n = Number(el.dataset.scoreOpen);
+    scoreOpen = scoreOpen === n ? null : n;
+    paintSeasons(showing);
+    return;
+  }
+  if (scoreOpen !== null && showing && showing.name && t.closest('.picker')) {
+    const cur = S.lib[showing.id] && S.lib[showing.id].sc ? S.lib[showing.id].sc[scoreOpen] : undefined;
+    const has = cur !== undefined && cur !== null;
+    if ((el = t.closest('[data-num]'))) { setScore(showing, scoreOpen, Number(el.dataset.num)); return; }
+    if (t.closest('[data-half]')) {
+      if (!has) setScore(showing, scoreOpen, 0.5);
+      else if (cur % 1 !== 0) setScore(showing, scoreOpen, Math.floor(cur));
+      else if (cur < 10) setScore(showing, scoreOpen, cur + 0.5);
+      return;
+    }
+    if (t.closest('[data-score-clear]')) { setScore(showing, scoreOpen, null); return; }
+    if (t.closest('[data-score-done]')) { scoreOpen = null; paintSeasons(showing); return; }
   }
   if (t.closest('#mark-all') && showing && showing.name) {
     const nums = seasonsOf(showing).map((s) => s.season_number);
@@ -1713,8 +1857,11 @@ document.addEventListener('click', (ev) => {
     }
   }
 });
+window.addEventListener('pagehide', () => flushNote());
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNote(); });
 document.addEventListener('change', (ev) => {
   const t = ev.target;
+  if (t instanceof HTMLTextAreaElement && t.id === 'note') { flushNote(); return; }
   if (!(t instanceof HTMLInputElement)) return;
   if (t.dataset.season && showing && showing.name) setSeen(showing, [Number(t.dataset.season)], t.checked);
   else if (t.dataset.toggle && draft) draft[t.dataset.toggle] = t.checked;
@@ -1723,6 +1870,7 @@ document.addEventListener('change', (ev) => {
 document.addEventListener('input', (ev) => {
   const t = ev.target;
   if (t instanceof HTMLInputElement && t.dataset.pick) pickSearch(t.dataset.pick, t.value);
+  else if (t instanceof HTMLTextAreaElement && t.id === 'note') { clearTimeout(noteTimer); noteTimer = setTimeout(flushNote, 500); }
 });
 
 if ('IntersectionObserver' in window) {
