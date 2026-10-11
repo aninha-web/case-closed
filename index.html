@@ -140,7 +140,6 @@ body.has-dock .wrap { padding-bottom: calc(var(--dock-h) + 64px + env(safe-area-
 .dock-item:hover { color: var(--text); }
 .dock-item[aria-current="page"] { color: var(--sel); }
 .dock-item svg { width: 22px; height: 22px; }
-.dock-item .n { position: absolute; top: 6px; left: calc(50% + 3px); min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; }
 .dock-item .me { width: 24px; height: 24px; border-radius: 12px; box-shadow: 0 0 0 1.5px currentColor; }
 
 .under { display: flex; flex-direction: column; gap: 12px; padding-block: 12px 16px; }
@@ -1474,14 +1473,11 @@ function paintLibrary() {
   $('#list-state').innerHTML = items.length ? '' : '<div class="state"><strong>' + (S.q.trim() ? 'No matches' : empty[0]) + '</strong><p>' + (S.q.trim() ? 'Nothing in this list matches your search.' : empty[1]) + '</p></div>';
 }
 function paintTabs() {
-  const c = libCounts();
-  c.actors = Object.keys(S.people).length;
   const onList = current === 'list';
   const icons = { all: ICON.grid, interested: ICON.mark, completed: ICON.done, actors: ICON.people };
-  $('#dock').innerHTML = TABS.map((t) => {
-    const n = t[0] !== 'all' && c[t[0]] ? '<span class="n">' + c[t[0]] + '</span>' : '';
-    return '<button type="button" class="dock-item" data-tab="' + t[0] + '"' + (onList && S.tab === t[0] ? ' aria-current="page"' : '') + '>' + icons[t[0]] + t[1] + n + '</button>';
-  }).join('') + '<a class="dock-item" href="#/profile"' + (current === 'profile' ? ' aria-current="page"' : '') + '><span class="me photo" aria-hidden="true"></span>Me</a>';
+  $('#dock').innerHTML = TABS.map((t) =>
+    '<button type="button" class="dock-item" data-tab="' + t[0] + '"' + (onList && S.tab === t[0] ? ' aria-current="page"' : '') + '>' + icons[t[0]] + t[1] + '</button>'
+  ).join('') + '<a class="dock-item" href="#/profile"' + (current === 'profile' ? ' aria-current="page"' : '') + '><span class="me photo" aria-hidden="true"></span>Me</a>';
   const title = $('#tab-title');
   if (title) title.textContent = (TABS.find((t) => t[0] === S.tab) || TABS[0])[1];
 }
@@ -2019,10 +2015,11 @@ function paintProfile() {
   const tagScroll = row ? row.scrollLeft : 0;
   let html = '<div class="ptop"><a class="icon-btn glass" href="#/settings" aria-label="Settings">' + ICON.gear + '</a></div>' +
     '<div class="mehero"><span class="me big photo">' + ICON.me + '</span><h1>My profile</h1><div class="facts"><div>' + c.watching + ' watching · ' + c.interested + ' interested · ' + c.completed + ' completed</div></div></div>' +
-    '<div class="seg two pchips" role="group" aria-label="Profile lists"><button type="button" data-ptab="watching" aria-pressed="' + (profileTab === 'watching') + '">Watching ' + items.length + '</button>' +
-    '<button type="button" data-ptab="picks" aria-pressed="' + (profileTab === 'picks') + '">Theme picks ' + S.theme.filter((it) => !tpSeen(it)).length + '</button></div>';
+    '<div class="seg two pchips" role="group" aria-label="Profile lists"><button type="button" data-ptab="watching" aria-pressed="' + (profileTab === 'watching') + '">Watching</button>' +
+    '<button type="button" data-ptab="picks" aria-pressed="' + (profileTab === 'picks') + '">Theme picks</button></div>';
   if (profileTab === 'watching') {
     html += '<section class="sec"><h2 class="h-sec">Watching now</h2>' +
+      (items.length ? '<p class="result-line">' + esc(items.length + ' series') + '</p>' : '') +
       (items.length
         ? '<div class="grid" id="profile-grid">' + items.map((e) => '<a class="card" data-id="' + e.id + '" href="#/show/' + e.id + '">' + posterHTML(e.p, e.n, e.id) + '<div class="cap"><div class="cap-name">' + esc(e.n) + '</div><div class="cap-meta">' + (e.s ? e.seen.length + ' of ' + plural(e.s, 'season') : '') + '</div></div></a>').join('') + '</div>'
         : '<p>Nothing here yet.</p>') +
