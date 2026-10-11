@@ -250,6 +250,43 @@ a.person:hover { color: var(--text); }
 @media (max-width: 380px) { .tabs { gap: 9px; } .tab { font-size: 12.5px; gap: 4px; } }
 @media (max-width: 380px) { .search { gap: 8px; padding: 0 10px; } .search input { font-size: 14px; } .filter-btn { gap: 6px; padding: 0 10px; } }
 
+/* season rows, favorites and the season panel */
+.season-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 48px; color: var(--text); text-decoration: none; }
+.season-open:hover { color: var(--text); }
+.season-open > svg { color: var(--muted); }
+.season-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-variant-numeric: tabular-nums; }
+.season-side b { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--muted); }
+.season-side b.has { color: var(--accent); }
+.season-side small { font-size: 12px; line-height: 16px; color: var(--muted); }
+.favs-box { margin-bottom: 26px; }
+.favbar { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 0 12px 0 16px; border: 0; border-radius: 10px; background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600; text-align: left; }
+.favbar .heart { width: 18px; height: 18px; fill: var(--accent); stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; flex: none; }
+.favbar .cnt { color: var(--accent); font-variant-numeric: tabular-nums; }
+.favbar .chev { margin-left: auto; color: var(--muted); transition: transform .15s ease; }
+.favbar[aria-expanded="true"] .chev { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .favbar .chev { transition: none; } }
+.favlist { display: flex; flex-direction: column; margin-top: 8px; border-radius: 10px; background: var(--surface); }
+.favitem { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 16px; color: var(--text); text-decoration: none; }
+.favitem:hover { color: var(--text); }
+.favitem + .favitem { border-top: 1px solid var(--line); }
+.favitem em { flex: none; font-style: normal; font-size: 12px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+.favitem span { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.panel { position: fixed; inset: 0; z-index: 25; display: flex; flex-direction: column; justify-content: flex-end; background: rgba(0, 0, 0, .55); }
+.panel-in { width: 100%; max-width: 720px; max-height: 88vh; margin: 0 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding: 10px 16px calc(20px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; background: var(--surface); }
+.panel-grip { flex: none; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #3A4150; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.panel-head h2 { font-family: var(--display); font-weight: 700; font-size: 28px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; }
+.panel-label { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; line-height: 18px; }
+.panel-label b { font-weight: 600; color: var(--accent); }
+.panel-label span { color: var(--text-2); font-variant-numeric: tabular-nums; text-align: right; }
+.eps { display: flex; flex-direction: column; border-radius: 10px; background: var(--raised); }
+.ep { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 6px 14px; border: 0; background: none; color: var(--text); text-align: left; }
+.ep + .ep { border-top: 1px solid var(--line); }
+.ep em { flex: none; width: 30px; font-style: normal; font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ep span { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.ep svg { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linejoin: round; }
+.ep[aria-pressed="true"] svg { fill: var(--accent); stroke: var(--accent); }
+
 /* profile list */
 .picks { display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); }
 .pick { display: flex; gap: 14px; padding: 14px 16px; color: var(--text); text-decoration: none; }
@@ -352,6 +389,7 @@ a.person:hover { color: var(--text); }
 
 <div id="sheet-filters" class="sheet" hidden></div>
 <div id="sheet-settings" class="sheet" hidden></div>
+<div id="panel" class="panel" hidden></div>
 <div id="toast" class="toast" role="status" hidden></div>
 
 <script>
@@ -409,7 +447,8 @@ const ICON = {
   mark: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"></path></svg>',
   plus: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>',
   me: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"></path></svg>',
-  chev: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>'
+  chev: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>',
+  heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg>'
 };
 
 /* ---------- helpers ---------- */
@@ -478,6 +517,11 @@ function cleanLib(raw) {
       s: Number(e.s) || 0, seen: Array.isArray(e.seen) ? [...new Set(e.seen.map(Number).filter((n) => n > 0))] : [],
       mark: e.mark === 'i' || e.mark === 'w' ? e.mark : (e.want ? 'i' : null),
       sc: sc, note: typeof e.note === 'string' ? e.note.slice(0, 5000) : '',
+      fav: (() => {
+        const fav = {};
+        if (e.fav && typeof e.fav === 'object') for (const key of Object.keys(e.fav)) if (/^\d+:\d+$/.test(key)) fav[key] = String(e.fav[key] || '').slice(0, 200);
+        return fav;
+      })(),
       u: Number(e.u) || Date.now()
     };
   }
@@ -696,7 +740,7 @@ function seasonsOf(d) {
 function entryFor(d) {
   const total = seasonsOf(d).length;
   let e = S.lib[d.id];
-  if (!e) e = S.lib[d.id] = { id: d.id, seen: [], mark: null, sc: {}, note: '', u: Date.now() };
+  if (!e) e = S.lib[d.id] = { id: d.id, seen: [], mark: null, sc: {}, note: '', fav: {}, u: Date.now() };
   e.n = d.name || e.n || 'Untitled';
   e.y = yearOf(d.first_air_date) || e.y || null;
   e.e = yearOf(d.last_air_date) || e.e || null;
@@ -706,7 +750,7 @@ function entryFor(d) {
 }
 function tidyEntry(id) {
   const e = S.lib[id];
-  if (e && !e.mark && !e.seen.length && !Object.keys(e.sc || {}).length && !(e.note || '').trim()) delete S.lib[id];
+  if (e && !e.mark && !e.seen.length && !Object.keys(e.sc || {}).length && !Object.keys(e.fav || {}).length && !(e.note || '').trim()) delete S.lib[id];
 }
 
 /* ---------- people and films ---------- */
@@ -1255,6 +1299,7 @@ function paintShow(d) {
   html += '<div class="marks"><button type="button" class="chip" data-mark="i" aria-pressed="false">Interested</button><button type="button" class="chip" data-mark="w" aria-pressed="false">Watching</button></div>';
   html += '<div class="cards"><div class="progress"><div class="progress-row"><b id="p-status"></b><span id="p-count"></span></div><div class="track"><i id="p-bar" style="width:0%"></i></div></div>' +
     '<div class="scorecard" id="score-card" hidden><div><b>Your score</b><small id="score-note"></small></div><div class="avg"><span id="score-avg"></span><i>/ 10</i></div></div></div>';
+  html += '<div class="favs-box" id="favs-box" hidden></div>';
   if (d.offline) html += '<p class="note" style="margin-bottom:24px">You’re offline, so only your saved progress is shown.</p>';
   if (d.overview) html += '<section class="sec"><h2 class="h-sec">Overview</h2><p>' + esc(d.overview) + '</p></section>';
   if (cast.length || creators.length) {
@@ -1271,30 +1316,102 @@ function paintShow(d) {
   const noteBox = $('#note');
   if (noteBox) noteBox.value = (S.lib[d.id] && S.lib[d.id].note) || '';
   paintSeasons(d);
+  paintFavs(d);
   paintTrack(d);
 }
 let scoreOpen = null;
+function favsOf(e, n) {
+  const fav = (e && e.fav) || {};
+  return Object.keys(fav).filter((k) => n === undefined || k.split(':')[0] === String(n))
+    .sort((a, b) => { const x = a.split(':').map(Number), y = b.split(':').map(Number); return x[0] - y[0] || x[1] - y[1]; });
+}
 function paintSeasons(d) {
   const box = $('#seasons-box');
   if (!box) return;
   const e = S.lib[d.id];
   box.innerHTML = seasonsOf(d).map((s) => {
     const n = s.season_number;
-    const meta = [yearOf(s.air_date), s.episode_count ? plural(s.episode_count, 'episode') : ''].filter(Boolean).join(' \u00B7 ');
+    const meta = [yearOf(s.air_date), s.episode_count ? plural(s.episode_count, 'episode') : ''].filter(Boolean).join(' · ');
     const on = !!(e && e.seen.includes(n));
     const sc = e && e.sc ? e.sc[n] : undefined;
     const has = sc !== undefined && sc !== null;
-    let html = '<div class="srow"><div class="season"><label class="season-main"><input type="checkbox" id="season-' + n + '" data-season="' + n + '"' + (on ? ' checked' : '') + '><span class="txt"><b>Season ' + n + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span></label>' +
-      '<button type="button" class="score-btn' + (has ? ' has' : '') + '" data-score-open="' + n + '" aria-expanded="' + (scoreOpen === n) + '" aria-label="' + (has ? 'Change your score for season ' + n : 'Score season ' + n) + '">' + (has ? fmtScore(sc) + ' / 10' : 'Score') + '</button></div>';
-    if (scoreOpen === n) {
-      const whole = has ? Math.floor(sc) : -1;
-      html += '<div class="picker"><div class="note">Your score for season ' + n + '. Tap .5 to add half a point.</div><div class="nums">' +
-        Array.from({ length: 11 }, (_, v) => '<button type="button" class="num" data-num="' + v + '" aria-pressed="' + (whole === v) + '">' + v + '</button>').join('') +
-        '<button type="button" class="num" data-half aria-label="Half a point" aria-pressed="' + (has && sc % 1 !== 0) + '"' + (has && sc >= 10 ? ' disabled' : '') + '>.5</button></div>' +
-        '<div class="picker-foot"><button type="button" class="text-btn" data-score-clear>Clear</button><button type="button" class="text-btn" data-score-done>Done</button></div></div>';
-    }
-    return html + '</div>';
+    const favs = favsOf(e, n).length;
+    return '<div class="srow"><div class="season"><input type="checkbox" id="season-' + n + '" data-season="' + n + '" aria-label="Seen season ' + n + '"' + (on ? ' checked' : '') + '>' +
+      '<a class="season-open" href="#/show/' + d.id + '/s/' + n + '" aria-label="Season ' + n + ': score and favorite episodes"><span class="txt"><b>Season ' + n + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</span>' +
+      '<span class="season-side"><b' + (has ? ' class="has"' : '') + '>' + (has ? fmtScore(sc) + ' / 10' : 'No score') + '</b>' + (favs ? '<small>♥ ' + favs + '</small>' : '') + '</span>' + ICON.chev + '</a></div></div>';
   }).join('');
+}
+let favOpen = false;
+function paintFavs(d) {
+  const box = $('#favs-box');
+  if (!box) return;
+  const e = S.lib[d.id];
+  const keys = favsOf(e);
+  box.hidden = !keys.length;
+  if (!keys.length) { box.innerHTML = ''; return; }
+  box.innerHTML = '<button type="button" class="favbar" id="favbar" aria-expanded="' + favOpen + '">' + ICON.heart.replace('<svg ', '<svg class="heart" ') + '<span>Favorite episodes</span><span class="cnt">' + keys.length + '</span>' + ICON.chev.replace('class="i"', 'class="i chev"') + '</button>' +
+    (favOpen ? '<div class="favlist">' + keys.map((k) => { const p = k.split(':'); return '<a class="favitem" href="#/show/' + d.id + '/s/' + p[0] + '"><em>S' + p[0] + ' E' + p[1] + '</em><span>' + esc(e.fav[k]) + '</span></a>'; }).join('') + '</div>' : '');
+}
+/* the season panel: score and favorite episodes for one season, opened over the series page */
+let panelSeason = null;
+const epsMem = new Map();
+function openPanel(d, n) {
+  panelSeason = n;
+  $('#panel').hidden = false;
+  document.body.classList.add('locked');
+  paintPanel(d, n);
+  const key = d.id + ':' + n;
+  if (epsMem.has(key) && !epsMem.get(key).error) return;
+  epsMem.delete(key);
+  tmdb('/tv/' + d.id + '/season/' + n, { language: 'en-US' })
+    .then((r) => { epsMem.set(key, { list: (r.episodes || []).map((x) => ({ n: x.episode_number, t: x.name || 'Episode ' + x.episode_number })) }); })
+    .catch((err) => { epsMem.set(key, { error: errorText(err) }); })
+    .finally(() => { if (panelSeason === n && showing && showing.id === d.id) paintPanel(d, n); });
+}
+function closePanel() {
+  panelSeason = null;
+  const p = $('#panel');
+  p.hidden = true;
+  p.innerHTML = '';
+  if (!openSheet) document.body.classList.remove('locked');
+}
+function paintPanel(d, n) {
+  const s = seasonsOf(d).find((x) => x.season_number === n) || { season_number: n };
+  const e = S.lib[d.id];
+  const sc = e && e.sc ? e.sc[n] : undefined;
+  const has = sc !== undefined && sc !== null;
+  const whole = has ? Math.floor(sc) : -1;
+  const meta = [yearOf(s.air_date), s.episode_count ? plural(s.episode_count, 'episode') : ''].filter(Boolean).join(' · ');
+  const eps = epsMem.get(d.id + ':' + n);
+  const fav = (e && e.fav) || {};
+  let list;
+  if (!eps) list = '<p class="note">Loading episodes…</p>';
+  else if (eps.error) list = '<p class="note">' + esc(eps.error) + '</p><div class="row"><button type="button" class="btn ghost" data-act="reload-eps">Try again</button></div>';
+  else if (!eps.list.length) list = '<p class="note">TMDB lists no episodes for this season.</p>';
+  else list = '<div class="eps">' + eps.list.map((x) => {
+    const on = !!fav[n + ':' + x.n];
+    return '<button type="button" class="ep" data-ep="' + x.n + '" data-title="' + esc(x.t) + '" aria-pressed="' + on + '" aria-label="' + esc((on ? 'Remove ' : 'Add ') + x.t + (on ? ' from favorites' : ' to favorites')) + '"><em>E' + x.n + '</em><span>' + esc(x.t) + '</span>' + ICON.heart + '</button>';
+  }).join('') + '</div>';
+  $('#panel').innerHTML = '<div class="panel-in" role="dialog" aria-modal="true" aria-label="Season ' + n + '"><div class="panel-grip"></div>' +
+    '<div class="panel-head"><div><h2>Season ' + n + '</h2>' + (meta ? '<p class="note">' + esc(meta) + '</p>' : '') + '</div><a class="icon-btn" href="#/" data-back aria-label="Close">' + ICON.close + '</a></div>' +
+    '<div class="group"><div class="panel-label"><b>Your score</b><span>' + (has ? fmtScore(sc) + ' / 10' : 'Not scored yet') + '</span></div><div class="nums">' +
+      Array.from({ length: 11 }, (_, v) => '<button type="button" class="num" data-num="' + v + '" aria-pressed="' + (whole === v) + '">' + v + '</button>').join('') +
+      '<button type="button" class="num" data-half aria-label="Half a point" aria-pressed="' + (has && sc % 1 !== 0) + '"' + (has && sc >= 10 ? ' disabled' : '') + '>.5</button></div>' +
+      (has ? '<div class="row"><button type="button" class="text-btn" data-score-clear>Clear score</button></div>' : '') + '</div>' +
+    '<div class="group"><div class="panel-label"><b>Episodes</b><span>Tap the heart on your favorites</span></div>' + list + '</div>' +
+    '<button type="button" class="btn block" data-back>Done</button></div>';
+}
+function toggleFav(d, n, ep, title) {
+  const e = entryFor(d);
+  if (!e.fav) e.fav = {};
+  const key = n + ':' + ep;
+  if (e.fav[key]) delete e.fav[key]; else e.fav[key] = String(title || 'Episode ' + ep).slice(0, 200);
+  e.u = Date.now();
+  tidyEntry(d.id);
+  saveLib();
+  paintPanel(d, n);
+  paintSeasons(d);
+  paintFavs(d);
 }
 function setScore(d, n, v) {
   const e = entryFor(d);
@@ -1305,6 +1422,7 @@ function setScore(d, n, v) {
   saveLib();
   paintSeasons(d);
   paintTrack(d);
+  if (panelSeason !== null && showing && showing.id === d.id) paintPanel(d, panelSeason);
 }
 let noteTimer = 0;
 function flushNote() {
@@ -1781,7 +1899,17 @@ function ensureList() {
 function route(back) {
   if (!S.key) { showView('setup'); return; }
   const h = location.hash || '#/';
+  const ms = h.match(/^#\/show\/(\d+)\/s\/(\d+)$/);
+  if (!ms && panelSeason !== null) closePanel();
+  if (ms) {
+    const id = Number(ms[1]), n = Number(ms[2]);
+    if (current === 'show' && showing && showing.id === id && showing.name) { openPanel(showing, n); return; }
+    showView('show');
+    openShow(id).then(() => { if (location.hash === h && showing && showing.id === id && showing.name) openPanel(showing, n); });
+    return;
+  }
   const m = h.match(/^#\/show\/(\d+)$/);
+  if (m && back && current === 'show' && showing && showing.id === Number(m[1]) && showing.name) { paintTrack(showing); return; }
   if (m) { showView('show'); openShow(Number(m[1])); return; }
   const mp = h.match(/^#\/person\/(\d+)$/);
   if (mp) { showView('person'); openPerson(Number(mp[1]), back); return; }
@@ -1807,7 +1935,10 @@ window.addEventListener('hashchange', () => {
   route(back);
 });
 function goBack() {
-  if (stack.length > 1) history.back(); else location.hash = '#/';
+  const panel = (location.hash || '').match(/^#\/show\/(\d+)\/s\/\d+$/);
+  if (stack.length > 1) history.back();
+  else if (panel) location.replace('#/show/' + panel[1]);
+  else location.hash = '#/';
 }
 
 /* ---------- events ---------- */
@@ -1881,25 +2012,23 @@ document.addEventListener('click', (ev) => {
     tidyEntry(showing.id); saveLib(); paintTrack(showing);
     return;
   }
-  if ((el = t.closest('[data-score-open]')) && showing && showing.name) {
-    const n = Number(el.dataset.scoreOpen);
-    scoreOpen = scoreOpen === n ? null : n;
-    paintSeasons(showing);
-    return;
-  }
-  if (scoreOpen !== null && showing && showing.name && t.closest('.picker')) {
-    const cur = S.lib[showing.id] && S.lib[showing.id].sc ? S.lib[showing.id].sc[scoreOpen] : undefined;
+  if (t.id === 'panel') { goBack(); return; }
+  if (panelSeason !== null && showing && showing.name && t.closest('#panel')) {
+    const n = panelSeason;
+    const cur = S.lib[showing.id] && S.lib[showing.id].sc ? S.lib[showing.id].sc[n] : undefined;
     const has = cur !== undefined && cur !== null;
-    if ((el = t.closest('[data-num]'))) { setScore(showing, scoreOpen, Number(el.dataset.num)); return; }
+    if ((el = t.closest('[data-num]'))) { setScore(showing, n, Number(el.dataset.num)); return; }
     if (t.closest('[data-half]')) {
-      if (!has) setScore(showing, scoreOpen, 0.5);
-      else if (cur % 1 !== 0) setScore(showing, scoreOpen, Math.floor(cur));
-      else if (cur < 10) setScore(showing, scoreOpen, cur + 0.5);
+      if (!has) setScore(showing, n, 0.5);
+      else if (cur % 1 !== 0) setScore(showing, n, Math.floor(cur));
+      else if (cur < 10) setScore(showing, n, cur + 0.5);
       return;
     }
-    if (t.closest('[data-score-clear]')) { setScore(showing, scoreOpen, null); return; }
-    if (t.closest('[data-score-done]')) { scoreOpen = null; paintSeasons(showing); return; }
+    if (t.closest('[data-score-clear]')) { setScore(showing, n, null); return; }
+    if ((el = t.closest('[data-ep]'))) { toggleFav(showing, n, Number(el.dataset.ep), el.dataset.title); return; }
+    if (t.closest('[data-act="reload-eps"]')) { epsMem.delete(showing.id + ':' + n); openPanel(showing, n); return; }
   }
+  if (t.closest('#favbar') && showing && showing.name) { favOpen = !favOpen; paintFavs(showing); return; }
   if (t.closest('#mark-all') && showing && showing.name) {
     const nums = seasonsOf(showing).map((s) => s.season_number);
     const info = trackInfo(showing);
