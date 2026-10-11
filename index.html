@@ -302,6 +302,39 @@ a.person:hover { color: var(--text); }
 .pick-text { font-size: 13px; line-height: 19px; color: var(--text-2); }
 .pick-heat { font-size: 12px; line-height: 17px; color: var(--muted); }
 .pick-heat span { font-weight: 600; color: var(--accent); }
+.pick-tags { font-size: 12px; line-height: 18px; font-weight: 500; color: var(--accent); }
+.tp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tp-add { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.tp-add svg { width: 16px; height: 16px; stroke-width: 2.5; }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 4px; border-radius: 12px; background: var(--surface); }
+.seg button { height: 40px; padding: 0; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--line); color: var(--text); }
+.tp-tags { display: flex; gap: 8px; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); overflow-x: auto; scrollbar-width: none; }
+.tp-tags::-webkit-scrollbar { display: none; }
+.chip.tag { flex: none; gap: 6px; padding: 0 14px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.tp-count { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; font-size: 13px; line-height: 18px; color: var(--muted); }
+.tp-count span { min-width: 0; }
+.tp-count .text-btn { flex: none; font-size: 13px; }
+.tp-row { gap: 0; padding: 0; align-items: flex-start; }
+.tp-link { flex: 1; min-width: 0; display: flex; gap: 14px; padding: 14px 0 14px 16px; color: var(--text); text-decoration: none; }
+.tp-link:hover { color: var(--text); }
+.tp-row .pick-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.tp-more { margin: 4px 2px 0 0; color: var(--muted); }
+.tp-more .dots { fill: currentColor; stroke: none; }
+.panel .search, .panel .field, .panel .note-box, .panel .results { background: var(--raised); }
+.panel .chips .chip.tag { min-height: 40px; padding: 0 12px; }
+.tp-new { display: flex; gap: 8px; }
+.tp-new .field { flex: 1; min-width: 0; }
+.tp-new .btn { flex: none; min-height: 48px; padding: 0 18px; }
+.tp-note { min-height: 96px; }
+.text-btn.danger { align-self: flex-start; color: var(--danger); }
+.tp-res button { flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; min-height: 64px; color: var(--text); }
+.tp-res button[disabled] { opacity: .5; }
+.tp-res .dot { flex: none; width: 22px; height: 22px; border: 2px solid var(--edge); border-radius: 11px; }
+.tp-res button[aria-pressed="true"] .dot { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 4px var(--raised); }
+.tp-thumb { flex: none; width: 34px; height: 51px; border-radius: 4px; }
+.tp-res-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tp-res-txt b { font-size: 14px; line-height: 19px; font-weight: 600; overflow-wrap: anywhere; }
 
 /* sheets */
 .sheet { position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--bg); padding-top: env(safe-area-inset-top, 0px); }
@@ -399,7 +432,7 @@ a.person:hover { color: var(--text); }
 /* ---------- constants ---------- */
 const API = 'https://api.themoviedb.org/3';
 const IMG = 'https://image.tmdb.org/t/p/';
-const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1', people: 'cc.people', films: 'cc.films', credits: 'cc.credits', picks: 'cc.picks.v1', ptab: 'cc.ptab' };
+const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1', people: 'cc.people', films: 'cc.films', credits: 'cc.credits', picks: 'cc.picks.v1', ptab: 'cc.ptab', theme: 'cc.theme.v1', tpf: 'cc.tpf' };
 const META_TTL = 60 * 24 * 3600 * 1000;
 const FIRST_YEAR = 1990;
 
@@ -448,7 +481,8 @@ const ICON = {
   plus: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>',
   me: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"></path></svg>',
   chev: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>',
-  heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg>'
+  heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg>',
+  more: '<svg class="i dots" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>'
 };
 
 /* ---------- helpers ---------- */
@@ -1479,45 +1513,85 @@ function filterByPerson(id, name, dept) {
 }
 
 /* ---------- profile ---------- */
-/* a hand-made list kept in the profile; TMDB ids are looked up by title and year the first time it opens */
-const PICKS = {
-  label: 'Couple picks',
-  groups: [
-    { title: 'Shows', items: [
-      { k: 't', n: "Nobody Wants This", y: 2024, heat: 'Medium', heatNote: 'mostly chemistry and kissing', text: "An outspoken sex-and-dating podcaster falls for a newly single rabbi, and their families and worlds clash. Noah is devoted, secure, and says what's bothering him straight away. Half-hour episodes, lots of couple scenes." },
-      { k: 't', n: "Catastrophe", y: 2015, heat: 'Medium', heatNote: 'very frank and funny about sex', text: "An American ad man and an Irish teacher have a week-long fling in London, she gets pregnant, and they decide to make a life together. He moves across an ocean for her and they say everything out loud. Four short seasons, though it gets heavier later." },
-      { k: 't', n: "Santa Clarita Diet", y: 2017, heat: 'Medium', heatNote: 'playful', text: "A suburban realtor turns undead and needs to eat people, and her husband helps her cope. Joel takes a lot, voices every worry, and never stops backing her. It's gory and ends on a cliffhanger." },
-      { k: 't', n: "Happy Endings", y: 2011, heat: 'Medium', heatNote: "they're all over each other", text: "A sitcom about six friends in Chicago after one leaves another at the altar. Brad and Jane are the married couple: she's an intense type-A who runs everything, and he worships her. They're one pair in an ensemble." },
-      { k: 't', n: "Trying", y: 2020, heat: 'Low', heatNote: 'but very sweet', text: "A London couple who can't conceive go through the adoption process. Jason is funny and supportive, and they're a team the whole way." },
-      { k: 't', n: "Madam Secretary", y: 2014, heat: 'Low', heatNote: '', text: "A former CIA analyst becomes Secretary of State and handles a crisis each episode, with her professor husband as her rock. It's the closest match to Brenda and Fritz, but long." },
-      { k: 't', n: "Medium", y: 2005, heat: '', heatNote: '', text: "From the investigation list. Joe is probably the most Fritz-like husband on TV." }
-    ] },
-    { title: 'Movies', items: [
-      { k: 'm', n: "Long Shot", y: 2019, heat: 'Medium', heatNote: 'raunchy humor', text: "A journalist reconnects with his former babysitter, now Secretary of State and running for president, and becomes her speechwriter. He's crazy about her and never threatened by her power." },
-      { k: 'm', n: "Beyond the Lights", y: 2014, heat: 'High', heatNote: '', text: "A pop star crushed by fame and a controlling mother is saved from a suicide attempt by a young cop, and they fall in love as she reclaims her life. He's steady and honest with her." },
-      { k: 'm', n: "The Idea of You", y: 2024, heat: 'High', heatNote: '', text: "A 40-year-old gallery owner takes her daughter to a music festival and falls for a 24-year-old boy-band singer. He's completely devoted and secure. Public pressure separates them for a while." },
-      { k: 'm', n: "Something New", y: 2006, heat: 'Medium', heatNote: '', text: "A buttoned-up accountant up for partner goes on a blind date with a laid-back landscaper and hires him to do her garden. He's unbothered by her status and calls her out honestly. He's played by Simon Baker from The Mentalist. Family pressure and a rival suitor cause a rough patch." },
-      { k: 'm', n: "The Fall Guy", y: 2024, heat: 'Low', heatNote: 'flirty', text: "A stuntman returns to work on the first film directed by his ex, then has to find its missing star to save her movie. She's the boss, he takes her well-earned anger, and he'd do anything for her." },
-      { k: 'm', n: "Marry Me", y: 2022, heat: 'Low', heatNote: '', text: "A pop superstar finds out mid-concert that her fiance cheated and marries a random math teacher from the crowd. He's calm, unimpressed by fame, and honest. Her ex hovers a bit." },
-      { k: 'm', n: "The Lost City", y: 2022, heat: 'Low', heatNote: 'flirty', text: "A reclusive romance novelist is kidnapped by a billionaire treasure hunter, and her cover model sets out to rescue her. He's sweet, devoted, and respects her brain." },
-      { k: 'm', n: "The Addams Family", y: 1991, heat: 'Medium', heatNote: 'campy and passionate', text: "A con man poses as long-lost Uncle Fester to steal the family fortune. The wildcard: Gomez is the gold standard of the worshipful husband." }
-    ] }
-  ]
-};
+/* Theme picks: a hand-made list of shows and movies with AO3-style tags, kept on this device.
+   The two pasted lists seed it the first time; after that it is hers to edit. TMDB ids for the seeded titles are
+   looked up by title and year the first time they show, and titles added from the app keep the id they were picked with. */
+const THEME_SEED = [
+  { k: 't', n: "The Rookie", y: 2018, heat: 'Low to medium', heatNote: '', tags: ['Safe Love After Abuse', 'Devoted Partner', 'Hurt/Comfort', 'The Ex Comes Back'], text: "A man in his 40s becomes the LAPD's oldest rookie, in an episodic cop show with a tone very close to 9-1-1. Bailey, a firefighter, arrives in the season 3 finale, and she later tells Nolan about her manipulative, abusive ex-husband, who was refusing her a divorce; he helps her get free. They marry in season 6. The ex stays a threat for a while, and they have a short rough patch in season 7. Another couple on the show has breakup drama." },
+  { k: 't', n: "Queen Sugar", y: 2016, heat: 'Medium', heatNote: '', tags: ['Safe Love After Abuse', 'Devoted Partner', 'Supporting Couple', 'The Ex Comes Back'], text: "Three siblings inherit their father's sugarcane farm in Louisiana, in a slow family drama. Aunt Vi survived a violent first marriage, and her younger partner Hollywood is kind and generous, and puts her wellbeing first. They're a supporting couple with one bump early on, and her ex resurfaces in season 4." },
+  { k: 't', n: "Marry My Husband", y: 2024, heat: 'Low', heatNote: '', tags: ['Safe Love After Abuse', 'Devoted Partner', 'Starting Over'], text: "K-drama, 16 episodes. A woman killed by her abusive husband wakes up ten years earlier and sets out to change her fate. Her boss is quietly devoted and protective without being controlling. It's more revenge fantasy than healing, and a late villain plot drags." },
+  { k: 'm', n: "Safe Haven", y: 2013, heat: 'Low to medium', heatNote: '', tags: ['Safe Love After Abuse', 'Devoted Partner', 'Starting Over', 'The Ex Comes Back', 'Thriller'], text: "A woman flees her abusive husband, a cop, to a small North Carolina town and falls for a single dad. He's gentle and lets her open up at her own pace. The husband tracks her down, so it ends as a thriller. The closest match to Maddie and Chimney." },
+  { k: 'm', n: "Sleeping with the Enemy", y: 1991, heat: 'Low', heatNote: '', tags: ['Safe Love After Abuse', 'Starting Over', 'Thriller'], text: "A woman fakes her death to escape a violent, controlling husband and starts over in a small town, where a gentle drama teacher falls for her. It's more thriller than romance." },
+  { k: 'm', n: "Diary of a Mad Black Woman", y: 2005, heat: 'Medium', heatNote: '', tags: ['Safe Love After Abuse', 'Devoted Partner', 'Starting Over', 'The Ex Comes Back'], text: "A woman is thrown out by her cruel, wealthy husband after 18 years and rebuilds her life with her family. Her new love is patient and devoted, and he's played by Shemar Moore, Derek Morgan from Criminal Minds. The tone swings between broad comedy and melodrama, and a late detour involving the ex tests the new relationship." },
+  { k: 'm', n: "Why Did I Get Married?", y: 2007, heat: 'Low to medium', heatNote: '', tags: ['Safe Love After Abuse', 'Supporting Couple'], text: "Four couples go on their annual retreat and secrets come out. One wife, constantly belittled by her husband, leaves him and falls for the kind local sheriff. It's one storyline of four." },
+  { k: 'm', n: "It Ends with Us", y: 2024, heat: 'Medium', heatNote: '', tags: ['Safe Love After Abuse', 'Abuse Shown On Screen'], text: "A florist marries a charming surgeon who turns violent, while her first love reappears. It's mostly about recognizing the abuse and leaving, so the healthy romance is only starting at the end. The abuse is shown on screen." },
+  { k: 'm', n: "Frankie and Johnny", y: 1991, heat: 'Medium', heatNote: '', tags: ['Safe Love After Abuse', 'Devoted Partner'], text: "A guarded waitress, wary after an abusive relationship, is pursued by the diner's new cook. He's devoted but a bit pushy by today's standards." },
+  { k: 't', n: "Nobody Wants This", y: 2024, heat: 'Medium', heatNote: 'mostly chemistry and kissing', tags: ['Fritz & Brenda', 'Devoted Partner', 'Rom-Com'], text: "An outspoken sex-and-dating podcaster falls for a newly single rabbi, and their families and worlds clash. Noah is devoted, secure, and says what's bothering him straight away. Half-hour episodes, lots of couple scenes." },
+  { k: 't', n: "Catastrophe", y: 2015, heat: 'Medium', heatNote: 'very frank and funny about sex', tags: ['Fritz & Brenda', 'Devoted Partner', 'Rom-Com'], text: "An American ad man and an Irish teacher have a week-long fling in London, she gets pregnant, and they decide to make a life together. He moves across an ocean for her and they say everything out loud. Four short seasons, though it gets heavier later." },
+  { k: 't', n: "Santa Clarita Diet", y: 2017, heat: 'Medium', heatNote: 'playful', tags: ['Fritz & Brenda', 'Devoted Partner', 'Established Relationship'], text: "A suburban realtor turns undead and needs to eat people, and her husband helps her cope. Joel takes a lot, voices every worry, and never stops backing her. It's gory and ends on a cliffhanger." },
+  { k: 't', n: "Happy Endings", y: 2011, heat: 'Medium', heatNote: "they're all over each other", tags: ['Fritz & Brenda', 'Comfort Watch', 'Devoted Partner', 'Established Relationship', 'Supporting Couple'], text: "A sitcom about six friends in Chicago after one leaves another at the altar. Brad and Jane are the married couple: she's an intense type-A who runs everything, and he worships her. They're one pair in an ensemble." },
+  { k: 't', n: "Trying", y: 2020, heat: 'Low', heatNote: 'but very sweet', tags: ['Fritz & Brenda', 'Comfort Watch', 'Devoted Partner', 'Established Relationship'], text: "A London couple who can't conceive go through the adoption process. Jason is funny and supportive, and they're a team the whole way." },
+  { k: 't', n: "Madam Secretary", y: 2014, heat: 'Low', heatNote: '', tags: ['Fritz & Brenda', 'Competent Woman', 'Devoted Partner', 'Established Relationship'], text: "A former CIA analyst becomes Secretary of State and handles a crisis each episode, with her professor husband as her rock. It's the closest match to Brenda and Fritz, but long." },
+  { k: 't', n: "Medium", y: 2005, heat: '', heatNote: '', tags: ['Fritz & Brenda', 'Devoted Partner', 'Established Relationship'], text: "From the investigation list. Joe is probably the most Fritz-like husband on TV." },
+  { k: 'm', n: "Long Shot", y: 2019, heat: 'Medium', heatNote: 'raunchy humor', tags: ['Fritz & Brenda', 'Competent Woman', 'Devoted Partner', 'Rom-Com'], text: "A journalist reconnects with his former babysitter, now Secretary of State and running for president, and becomes her speechwriter. He's crazy about her and never threatened by her power." },
+  { k: 'm', n: "Beyond the Lights", y: 2014, heat: 'High', heatNote: '', tags: ['Fritz & Brenda', 'Celebrity Romance', 'Devoted Partner', 'Hurt/Comfort', 'Starting Over'], text: "A pop star crushed by fame and a controlling mother is saved from a suicide attempt by a young cop, and they fall in love as she reclaims her life. He's steady and honest with her." },
+  { k: 'm', n: "The Idea of You", y: 2024, heat: 'High', heatNote: '', tags: ['Fritz & Brenda', 'Celebrity Romance', 'Devoted Partner'], text: "A 40-year-old gallery owner takes her daughter to a music festival and falls for a 24-year-old boy-band singer. He's completely devoted and secure. Public pressure separates them for a while." },
+  { k: 'm', n: "Something New", y: 2006, heat: 'Medium', heatNote: '', tags: ['Fritz & Brenda', 'Competent Woman', 'Rom-Com'], text: "A buttoned-up accountant up for partner goes on a blind date with a laid-back landscaper and hires him to do her garden. He's unbothered by her status and calls her out honestly. He's played by Simon Baker from The Mentalist. Family pressure and a rival suitor cause a rough patch." },
+  { k: 'm', n: "The Fall Guy", y: 2024, heat: 'Low', heatNote: 'flirty', tags: ['Fritz & Brenda', 'Competent Woman', 'Devoted Partner', 'Rom-Com'], text: "A stuntman returns to work on the first film directed by his ex, then has to find its missing star to save her movie. She's the boss, he takes her well-earned anger, and he'd do anything for her." },
+  { k: 'm', n: "Marry Me", y: 2022, heat: 'Low', heatNote: '', tags: ['Fritz & Brenda', 'Celebrity Romance', 'Rom-Com'], text: "A pop superstar finds out mid-concert that her fiance cheated and marries a random math teacher from the crowd. He's calm, unimpressed by fame, and honest. Her ex hovers a bit." },
+  { k: 'm', n: "The Lost City", y: 2022, heat: 'Low', heatNote: 'flirty', tags: ['Fritz & Brenda', 'Devoted Partner', 'Rom-Com'], text: "A reclusive romance novelist is kidnapped by a billionaire treasure hunter, and her cover model sets out to rescue her. He's sweet, devoted, and respects her brain." },
+  { k: 'm', n: "The Addams Family", y: 1991, heat: 'Medium', heatNote: 'campy and passionate', tags: ['Fritz & Brenda', 'Devoted Partner', 'Established Relationship'], text: "A con man poses as long-lost Uncle Fester to steal the family fortune. The wildcard: Gomez is the gold standard of the worshipful husband." }
+];
+const normTitle = (t) => String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
+const az = (a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' });
+const cleanTag = (s) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, 40);
+function uniqTags(list) {
+  const out = [];
+  for (const raw of Array.isArray(list) ? list : []) {
+    const t = cleanTag(raw);
+    if (t && !out.some((x) => az(x, t) === 0)) out.push(t);
+  }
+  return out.sort(az);
+}
 const pickKey = (it) => it.k + ':' + it.n + ':' + it.y;
+function cleanTheme(raw) {
+  if (!Array.isArray(raw)) return null;
+  const out = [], seen = new Set();
+  for (const it of raw) {
+    if (!it || (it.k !== 't' && it.k !== 'm') || !it.n) continue;
+    const id = Number(it.id) || null;
+    const y = Number(it.y) || null;
+    const key = typeof it.key === 'string' && /^[mt]-[a-z0-9-]*$/.test(it.key) ? it.key : (id ? it.k + '-' + id : it.k + '-' + normTitle(it.n) + '-' + y);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      key, k: it.k, n: String(it.n).slice(0, 200), y, id, p: typeof it.p === 'string' && it.p ? it.p : null,
+      heat: typeof it.heat === 'string' ? it.heat.slice(0, 40) : '', heatNote: typeof it.heatNote === 'string' ? it.heatNote.slice(0, 120) : '',
+      text: typeof it.text === 'string' ? it.text.slice(0, 2000) : '', tags: uniqTags(it.tags)
+    });
+  }
+  return out;
+}
+S.theme = cleanTheme(store.get(LS.theme, null)) || cleanTheme(THEME_SEED);
+const saveTheme = () => store.set(LS.theme, S.theme);
+const themeItem = (key) => S.theme.find((x) => x.key === key) || null;
+/* every tag in use, case-insensitively unique, A to Z */
+const themeTags = () => uniqTags([].concat(...S.theme.map((x) => x.tags)));
+
 const pickIds = (() => { const v = store.get(LS.picks, {}); return v && typeof v === 'object' ? v : {}; })();
 const pickJobs = new Map();
-const normTitle = (t) => String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
+const refOf = (it) => (it.id ? { id: it.id, p: it.p } : pickIds[pickKey(it)] || null);
 function resolvePick(it) {
+  if (it.id) return Promise.resolve(refOf(it));
   const key = pickKey(it);
   if (pickIds[key]) return Promise.resolve(pickIds[key]);
   if (pickJobs.has(key)) return pickJobs.get(key);
   const find = async (withYear) => {
     const params = { query: it.n, page: 1, language: 'en-US', include_adult: 'false' };
-    if (withYear) params[it.k === 't' ? 'first_air_date_year' : 'year'] = it.y;
+    if (withYear && it.y) params[it.k === 't' ? 'first_air_date_year' : 'year'] = it.y;
     const r = await limit(() => tmdb(it.k === 't' ? '/search/tv' : '/search/movie', params));
     const list = r.results || [];
-    const yearOk = (x) => Math.abs((yearOf(it.k === 't' ? x.first_air_date : x.release_date) || 0) - it.y) <= 1;
+    const yearOk = (x) => !it.y || Math.abs((yearOf(it.k === 't' ? x.first_air_date : x.release_date) || 0) - it.y) <= 1;
     const same = (x) => normTitle(x.name || x.title) === normTitle(it.n);
     if (withYear) return list.find(same) || (list[0] && yearOk(list[0]) ? list[0] : null);
     return list.find((x) => same(x) && yearOk(x)) || null;
@@ -1543,26 +1617,91 @@ function pickState(it, ref) {
   if (e.mark === 'i') return { done: false, label: 'Interested' };
   return { done: false, label: '' };
 }
-function pickRowHTML(it) {
-  const key = pickKey(it);
-  const ref = pickIds[key];
+const inTheme = (k, id) => S.theme.some((it) => { const r = refOf(it); return it.k === k && r && r.id === id; });
+
+/* filters: one type plus any number of tags; a title has to carry every tag that is on */
+const tpf = (() => {
+  const v = store.get(LS.tpf, null) || {};
+  return { type: v.type === 't' || v.type === 'm' ? v.type : 'all', tags: uniqTags(v.tags) };
+})();
+const saveTpf = () => store.set(LS.tpf, tpf);
+function tpShown() {
+  const tags = themeTags();
+  tpf.tags = tpf.tags.filter((t) => tags.some((x) => az(x, t) === 0));
+  return S.theme.filter((it) => (tpf.type === 'all' || it.k === tpf.type) && tpf.tags.every((t) => it.tags.some((x) => az(x, t) === 0)));
+}
+function tpRowHTML(it) {
+  const ref = refOf(it);
   const st = pickState(it, ref);
   const href = ref ? (it.k === 't' ? '#/show/' : '#/film/') + ref.id : '#/profile';
-  const meta = [it.k === 't' ? 'Show' : 'Movie', String(it.y)].join(' · ') + (st.label ? ' · <em>' + esc(st.label) + '</em>' : '');
-  const heat = it.heat ? '<div class="pick-heat"><span>Heat: ' + esc(it.heat.toLowerCase()) + '</span>' + (it.heatNote ? ', ' + esc(it.heatNote) : '') + '</div>' : '';
-  return '<a class="pick' + (st.done ? ' done' : '') + '" data-pick="' + esc(key) + '" href="' + href + '"' + (ref ? '' : ' data-wait="1"') + '>' +
+  const meta = [it.k === 't' ? 'Show' : 'Movie', it.y ? String(it.y) : ''].filter(Boolean).join(' · ') + (st.label ? ' · <em>' + esc(st.label) + '</em>' : '');
+  const heat = it.heat ? '<span class="pick-heat"><span>Heat: ' + esc(it.heat.toLowerCase()) + '</span>' + (it.heatNote ? ', ' + esc(it.heatNote) : '') + '</span>' : '';
+  return '<div class="pick tp-row' + (st.done ? ' done' : '') + '" data-pick="' + esc(it.key) + '">' +
+    '<a class="tp-link" href="' + href + '"' + (ref ? '' : ' data-wait="1"') + '>' +
     '<span class="poster pick-poster" style="--tile:' + TILES[it.n.length % TILES.length] + '">' + (ref && ref.p ? '<img src="' + IMG + 'w185' + esc(ref.p) + '" alt="" loading="lazy" data-name="' + esc(it.n) + '">' : '<span class="poster-title">' + esc(it.n) + '</span>') + '</span>' +
-    '<span class="pick-body"><b>' + esc(it.n) + '</b><span class="pick-meta">' + meta + '</span><span class="pick-text">' + esc(it.text) + '</span>' + heat + '</span></a>';
+    '<span class="pick-body"><b>' + esc(it.n) + '</b><span class="pick-meta">' + meta + '</span>' +
+    (it.tags.length ? '<span class="pick-tags">' + esc(it.tags.join(', ')) + '</span>' : '') +
+    (it.text ? '<span class="pick-text">' + esc(it.text) + '</span>' : '') + heat + '</span></a>' +
+    '<a class="icon-btn tp-more" href="#/profile/edit/' + it.key + '" aria-label="' + esc('Edit ' + it.n) + '">' + ICON.more + '</a></div>';
 }
+function tpCountHTML(shown) {
+  const on = tpf.type !== 'all' || tpf.tags.length;
+  return '<span>' + plural(shown.length, 'title') + (tpf.tags.length ? ' · ' + esc(tpf.tags.join(' + ')) : '') + '</span>' +
+    (on ? '<button type="button" class="text-btn" data-tpclear>Clear filters</button>' : '');
+}
+function tpListHTML(shown) {
+  if (!S.theme.length) return '<p class="note">Nothing here yet. Use Add a title to start the list.</p>';
+  if (!shown.length) return '<p class="note">No titles match these filters.</p>';
+  return '<div class="picks">' + shown.map(tpRowHTML).join('') + '</div>';
+}
+function tpSectionHTML() {
+  const shown = tpShown();
+  const tags = themeTags();
+  const seg = (v, label) => '<button type="button" data-tptype="' + v + '" aria-pressed="' + (tpf.type === v) + '">' + label + '</button>';
+  return '<div class="sec"><div class="tp-head"><h2 class="h-sec">Theme picks</h2><a class="text-btn tp-add" href="#/profile/add">' + ICON.plus + 'Add a title</a></div>' +
+    '<div class="seg" role="group" aria-label="Type">' + seg('all', 'All') + seg('t', 'Shows') + seg('m', 'Movies') + '</div>' +
+    (tags.length ? '<div class="tp-tags" role="group" aria-label="Tags">' + tags.map((t) => {
+      const on = tpf.tags.some((x) => az(x, t) === 0);
+      return '<button type="button" class="chip tag" data-tptag="' + esc(t) + '" aria-pressed="' + on + '">' + (on ? ICON.check : '') + esc(t) + '</button>';
+    }).join('') + '</div><p class="note">Tap a tag to filter by it and tap it again to turn it off. With two tags on, only titles that have both show up.</p>' : '') +
+    '<div class="tp-count" id="tp-count">' + tpCountHTML(shown) + '</div>' +
+    '<div id="tp-list">' + tpListHTML(shown) + '</div></div>';
+}
+/* after a tap on a filter only the chips, the count and the list change, so the tag row keeps its scroll position */
+function paintTpResults() {
+  const shown = tpShown();
+  document.querySelectorAll('#view-profile [data-tptype]').forEach((b) => b.setAttribute('aria-pressed', String(tpf.type === b.dataset.tptype)));
+  document.querySelectorAll('#view-profile [data-tptag]').forEach((b) => {
+    const on = tpf.tags.some((x) => az(x, b.dataset.tptag) === 0);
+    b.setAttribute('aria-pressed', String(on));
+    b.innerHTML = (on ? ICON.check : '') + esc(b.dataset.tptag);
+  });
+  const c = $('#tp-count'), l = $('#tp-list');
+  if (c) c.innerHTML = tpCountHTML(shown);
+  if (l) l.innerHTML = tpListHTML(shown);
+  resolveShown(shown);
+}
+function resolveShown(shown) {
+  for (const it of shown) {
+    if (refOf(it)) continue;
+    resolvePick(it).then((ref) => {
+      if (!ref || current !== 'profile' || profileTab !== 'picks') return;
+      const row = document.querySelector('#view-profile .tp-row[data-pick="' + CSS.escape(it.key) + '"]');
+      if (row) row.outerHTML = tpRowHTML(it);
+    }).catch(() => {});
+  }
+}
+
 let profileTab = store.get(LS.ptab, 'watching') === 'picks' ? 'picks' : 'watching';
 function paintProfile() {
   const c = libCounts();
   const items = Object.keys(S.lib).map((id) => S.lib[id]).filter((e) => statusOf(e) === 'watching').sort((a, b) => b.u - a.u);
-  const all = PICKS.groups.reduce((n, g) => n + g.items.length, 0);
+  const row = $('#view-profile .tp-tags');
+  const tagScroll = row ? row.scrollLeft : 0;
   let html = '<div class="show-top"><a class="icon-btn" href="#/" data-back aria-label="Back to the list">' + ICON.back + '</a></div>' +
     '<div class="phero"><span class="me big photo">' + ICON.me + '</span><div class="phero-info"><h1>My profile</h1><div class="facts"><div>' + c.watching + ' watching · ' + c.interested + ' interested · ' + c.completed + ' completed</div></div></div></div>' +
     '<div class="pchips"><button type="button" class="chip" data-ptab="watching" aria-pressed="' + (profileTab === 'watching') + '">Watching ' + items.length + '</button>' +
-    '<button type="button" class="chip" data-ptab="picks" aria-pressed="' + (profileTab === 'picks') + '">' + PICKS.label + ' ' + all + '</button></div>';
+    '<button type="button" class="chip" data-ptab="picks" aria-pressed="' + (profileTab === 'picks') + '">Theme picks ' + S.theme.length + '</button></div>';
   if (profileTab === 'watching') {
     html += '<section class="sec"><h2 class="h-sec">Watching now</h2>' +
       (items.length
@@ -1570,20 +1709,185 @@ function paintProfile() {
         : '<p>Nothing here yet.</p>') +
       '<p class="note">A series shows up here when you set it to Watching on its page. Ticking seasons alone does not add it.</p></section>';
   } else {
-    html += PICKS.groups.map((g) => '<section class="sec"><h2 class="h-sec">' + esc(g.title) + '</h2><div class="picks">' + g.items.map(pickRowHTML).join('') + '</div></section>').join('');
+    html += tpSectionHTML();
   }
   $('#view-profile').innerHTML = html;
   syncCards();
   if (profileTab === 'picks') {
-    for (const g of PICKS.groups) for (const it of g.items) {
-      if (pickIds[pickKey(it)]) continue;
-      resolvePick(it).then((ref) => {
-        if (!ref || current !== 'profile' || profileTab !== 'picks') return;
-        const row = document.querySelector('#view-profile .pick[data-pick="' + CSS.escape(pickKey(it)) + '"]');
-        if (row) row.outerHTML = pickRowHTML(it);
-      }).catch(() => {});
-    }
+    const r = $('#view-profile .tp-tags');
+    if (r) r.scrollLeft = tagScroll;
+    resolveShown(tpShown());
   }
+}
+
+/* the edit and add panels open over the profile, at #/profile/edit/KEY and #/profile/add, so Back closes them */
+let tpPanel = null, tpNoteTimer = 0;
+function openTpPanel(mode, key) {
+  flushTpNote();
+  if (mode === 'edit') {
+    const it = themeItem(key);
+    if (!it) { tpPanel = null; toast('That title is no longer in Theme picks.'); goBack(); return; }
+    tpPanel = { mode, key, tags: themeTags() };
+  } else {
+    tpPanel = { mode: 'add', tags: themeTags(), on: [], q: '', results: null, sel: -1, loading: false, error: null, note: '' };
+  }
+  $('#panel').hidden = false;
+  document.body.classList.add('locked');
+  paintTpPanel();
+}
+function closeTpPanel() {
+  flushTpNote();
+  tpPanel = null;
+  const p = $('#panel');
+  p.hidden = true;
+  p.innerHTML = '';
+  if (!openSheet) document.body.classList.remove('locked');
+}
+function flushTpNote() {
+  clearTimeout(tpNoteTimer);
+  const box = $('#tp-note');
+  if (!tpPanel || !box) return;
+  if (tpPanel.mode === 'add') { tpPanel.note = box.value; return; }
+  const it = themeItem(tpPanel.key);
+  if (it && it.text !== box.value.slice(0, 2000)) { it.text = box.value.slice(0, 2000); saveTheme(); }
+}
+const tpOnList = () => (tpPanel.mode === 'edit' ? (themeItem(tpPanel.key) || { tags: [] }).tags : tpPanel.on);
+function tpChipsHTML() {
+  const on = tpOnList();
+  const tags = uniqTags(tpPanel.tags.concat(on));
+  if (!tags.length) return '<p class="note">No tags yet. Create the first one below.</p>';
+  return tags.map((t) => {
+    const sel = on.some((x) => az(x, t) === 0);
+    return '<button type="button" class="chip tag" data-tpt="' + esc(t) + '" aria-pressed="' + sel + '">' + (sel ? ICON.check : '') + esc(t) + '</button>';
+  }).join('');
+}
+function tpNewTagHTML() {
+  return '<div class="group"><label class="panel-label" for="tp-newtag"><b>New tag</b></label><div class="tp-new"><input id="tp-newtag" class="field" type="text" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="For example: Slow Burn"><button type="button" class="btn ghost" data-act="tp-newtag">Add</button></div>' +
+    '<p class="note">' + (tpPanel.mode === 'edit' ? 'A new tag goes on this title' : 'A new tag goes on the title you add') + ' and takes its A to Z place in the filters.</p></div>';
+}
+function paintTpPanel() {
+  const p = tpPanel;
+  if (!p) return;
+  let html;
+  if (p.mode === 'edit') {
+    const it = themeItem(p.key);
+    const meta = [it.k === 't' ? 'Show' : 'Movie', it.y ? String(it.y) : '', it.heat ? 'Heat: ' + it.heat.toLowerCase() : ''].filter(Boolean).join(' · ');
+    html = '<div class="panel-in" role="dialog" aria-modal="true" aria-label="' + esc('Edit ' + it.n) + '"><div class="panel-grip"></div>' +
+      '<div class="panel-head"><div><h2>' + esc(it.n) + '</h2><p class="note">' + esc(meta) + '</p></div><a class="icon-btn" href="#/profile" data-back aria-label="Close">' + ICON.close + '</a></div>' +
+      '<div class="group"><div class="panel-label"><b>Tags</b><span id="tp-on">' + plural(it.tags.length, 'tag') + ' on</span></div><div class="chips" id="tp-chips">' + tpChipsHTML() + '</div></div>' +
+      tpNewTagHTML() +
+      '<div class="group"><label class="panel-label" for="tp-note"><b>Why it\'s here</b></label><textarea id="tp-note" class="note-box tp-note" maxlength="2000" placeholder="A short note about this title">' + esc(it.text) + '</textarea></div>' +
+      '<button type="button" class="text-btn danger" data-act="tp-remove">Remove from Theme picks</button>' +
+      '<button type="button" class="btn block" data-back>Done</button></div>';
+  } else {
+    html = '<div class="panel-in" role="dialog" aria-modal="true" aria-label="Add to Theme picks"><div class="panel-grip"></div>' +
+      '<div class="panel-head"><h2>Add to Theme picks</h2><a class="icon-btn" href="#/profile" data-back aria-label="Close">' + ICON.close + '</a></div>' +
+      '<label class="search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>' +
+      '<input id="tp-q" type="search" placeholder="Search a show or movie" aria-label="Search a show or movie" autocomplete="off" enterkeyhint="search" value="' + esc(p.q) + '"></label>' +
+      '<div id="tp-results"></div>' +
+      '<div class="group"><div class="panel-label"><b>Tags</b><span id="tp-on">' + plural(p.on.length, 'tag') + ' on</span></div><div class="chips" id="tp-chips">' + tpChipsHTML() + '</div></div>' +
+      tpNewTagHTML() +
+      '<div class="group"><label class="panel-label" for="tp-note"><b>Why it\'s here (optional)</b></label><textarea id="tp-note" class="note-box tp-note" maxlength="2000" placeholder="A short note, like the descriptions in your lists">' + esc(p.note) + '</textarea></div>' +
+      '<button type="button" class="btn block" id="tp-add" data-act="tp-add" disabled>Add</button></div>';
+  }
+  $('#panel').innerHTML = html;
+  if (p.mode === 'add') paintTpSearch();
+}
+function paintTpSearch() {
+  const p = tpPanel, box = $('#tp-results');
+  if (!p || p.mode !== 'add' || !box) return;
+  let html = '';
+  if (p.loading) html = '<p class="note">Searching…</p>';
+  else if (p.error) html = '<p class="note">' + esc(p.error) + '</p>';
+  else if (p.results && !p.results.length) html = '<p class="note">No shows or movies match that search.</p>';
+  else if (p.results) html = '<div class="results tp-res">' + p.results.map((r, i) => {
+    const there = inTheme(r.k, r.id);
+    return '<button type="button" data-tpsel="' + i + '" aria-pressed="' + (p.sel === i) + '"' + (there ? ' disabled' : '') + '><span class="dot" aria-hidden="true"></span>' +
+      '<span class="poster tp-thumb" style="--tile:' + TILES[r.n.length % TILES.length] + '">' + (r.p ? '<img src="' + IMG + 'w92' + esc(r.p) + '" alt="" loading="lazy">' : '') + '</span>' +
+      '<span class="tp-res-txt"><b>' + esc(r.n) + '</b><small>' + [r.k === 't' ? 'Show' : 'Movie', r.y ? String(r.y) : ''].filter(Boolean).join(' · ') + (there ? ' · already in Theme picks' : '') + '</small></span></button>';
+  }).join('') + '</div>';
+  box.innerHTML = html;
+  const add = $('#tp-add');
+  if (add) add.disabled = !(p.results && p.results[p.sel]);
+}
+let tpTimer = 0, tpToken = 0;
+function tpSearch(q) {
+  const p = tpPanel;
+  if (!p || p.mode !== 'add') return;
+  clearTimeout(tpTimer);
+  p.q = q;
+  const query = q.trim();
+  tpToken++;
+  if (!query) { p.results = null; p.loading = false; p.error = null; p.sel = -1; paintTpSearch(); return; }
+  p.loading = true; p.error = null; p.sel = -1;
+  paintTpSearch();
+  tpTimer = setTimeout(async () => {
+    const token = ++tpToken;
+    try {
+      const params = { query, page: 1, language: 'en-US', include_adult: 'false' };
+      const [tv, mv] = await Promise.all([tmdb('/search/tv', params), tmdb('/search/movie', params)]);
+      if (token !== tpToken || tpPanel !== p) return;
+      const want = normTitle(query);
+      const rank = (r) => (normTitle(r.n) === want ? 1e6 : normTitle(r.n).indexOf(want) === 0 ? 1e4 : 0) + r.pop;
+      p.results = (tv.results || []).map((x) => ({ k: 't', id: x.id, n: x.name || x.original_name, y: yearOf(x.first_air_date), p: x.poster_path || null, pop: Number(x.popularity) || 0 }))
+        .concat((mv.results || []).map((x) => ({ k: 'm', id: x.id, n: x.title || x.original_title, y: yearOf(x.release_date), p: x.poster_path || null, pop: Number(x.popularity) || 0 })))
+        .filter((r) => r.id && r.n).sort((a, b) => rank(b) - rank(a)).slice(0, 10);
+      p.loading = false;
+    } catch (err) {
+      if (token !== tpToken || tpPanel !== p) return;
+      p.loading = false; p.results = null; p.error = errorText(err);
+    }
+    paintTpSearch();
+  }, 350);
+}
+function tpToggleTag(name) {
+  const p = tpPanel;
+  if (p.mode === 'edit') {
+    const it = themeItem(p.key);
+    if (!it) return;
+    it.tags = it.tags.some((x) => az(x, name) === 0) ? it.tags.filter((x) => az(x, name) !== 0) : uniqTags(it.tags.concat(name));
+    saveTheme();
+  } else {
+    p.on = p.on.some((x) => az(x, name) === 0) ? p.on.filter((x) => az(x, name) !== 0) : uniqTags(p.on.concat(name));
+  }
+  paintTpChips();
+}
+function paintTpChips() {
+  const box = $('#tp-chips'), n = $('#tp-on');
+  if (box) box.innerHTML = tpChipsHTML();
+  if (n) n.textContent = plural(tpOnList().length, 'tag') + ' on';
+}
+function tpAddTag() {
+  const input = $('#tp-newtag');
+  if (!input || !tpPanel) return;
+  let name = cleanTag(input.value);
+  if (!name) { input.focus(); return; }
+  name = uniqTags(tpPanel.tags).find((x) => az(x, name) === 0) || name;
+  if (!tpPanel.tags.some((x) => az(x, name) === 0)) tpPanel.tags = uniqTags(tpPanel.tags.concat(name));
+  input.value = '';
+  if (!tpOnList().some((x) => az(x, name) === 0)) tpToggleTag(name); else paintTpChips();
+}
+function tpAddTitle() {
+  const p = tpPanel;
+  const r = p && p.results && p.results[p.sel];
+  if (!r) return;
+  if (inTheme(r.k, r.id)) { toast(r.n + ' is already in Theme picks.'); return; }
+  const box = $('#tp-note');
+  const it = cleanTheme([{ key: r.k + '-' + r.id, k: r.k, n: r.n, y: r.y, id: r.id, p: r.p, text: box ? box.value : p.note, tags: p.on }])[0];
+  S.theme.unshift(it);
+  saveTheme();
+  const hidden = !tpShown().includes(it);
+  toast('Added ' + it.n + (hidden ? '. Clear the filters to see it.' : ''));
+  goBack();
+}
+function tpRemoveTitle() {
+  const it = tpPanel && themeItem(tpPanel.key);
+  if (!it) return;
+  if (!window.confirm('Remove ' + it.n + ' from Theme picks?')) return;
+  S.theme = S.theme.filter((x) => x !== it);
+  saveTheme();
+  toast('Removed ' + it.n);
+  goBack();
 }
 
 /* ---------- actor page ---------- */
@@ -1834,7 +2138,7 @@ function paintSettings() {
   const masked = S.key ? S.key.slice(0, 4) + '…' + S.key.slice(-4) : '';
   $('#sheet-settings').innerHTML = '<div class="sheet-in"><div class="sheet-head"><a class="icon-btn" href="#/" data-back aria-label="Close settings">' + ICON.close + '</a><h1>Settings</h1></div><div class="sheet-body">' +
     (installEvent ? '<div class="group"><h2>Install</h2><p class="note">Add Case Closed to your home screen so it opens like an app.</p><div class="row"><button type="button" class="btn" data-act="install">Install app</button></div></div>' : '') +
-    '<div class="group"><h2>Your progress</h2><p class="note">' + total + ' series, ' + plural(Object.keys(S.films).length, 'film') + ' and ' + plural(Object.keys(S.people).length, 'actor') + ' saved on this device only. Download a backup now and then, and before clearing browser data or changing phones.</p>' +
+    '<div class="group"><h2>Your progress</h2><p class="note">' + total + ' series, ' + plural(Object.keys(S.films).length, 'film') + ', ' + plural(Object.keys(S.people).length, 'actor') + ' and ' + plural(S.theme.length, 'theme pick') + ' saved on this device only. Download a backup now and then, and before clearing browser data or changing phones.</p>' +
       '<div class="row"><button type="button" class="btn ghost" data-act="export">Download backup</button><label class="btn ghost" for="import-file">Restore a backup</label><input id="import-file" type="file" accept="application/json,.json" hidden></div></div>' +
     '<div class="group"><label class="h" for="key-change">TMDB key</label><p class="note">Current key: ' + esc(masked) + '</p><input id="key-change" class="field" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste a new key">' +
       '<p id="key-err" class="err" hidden></p><div class="row"><button type="button" class="btn ghost" data-act="key-save">Save key</button></div></div>' +
@@ -1844,7 +2148,7 @@ function paintSettings() {
     '</div></div>';
 }
 function exportBackup() {
-  const data = JSON.stringify({ app: 'case-closed', version: 3, exported: new Date().toISOString(), lib: S.lib, films: S.films, people: S.people }, null, 1);
+  const data = JSON.stringify({ app: 'case-closed', version: 4, exported: new Date().toISOString(), lib: S.lib, films: S.films, people: S.people, theme: S.theme }, null, 1);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
   a.download = 'case-closed-backup-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -1860,11 +2164,12 @@ function importBackup(file) {
     let j = null;
     try { j = JSON.parse(String(reader.result)); } catch (e) { j = null; }
     if (!j || j.app !== 'case-closed' || !j.lib || typeof j.lib !== 'object') { toast("That file isn't a Case Closed backup."); return; }
-    const lib = cleanLib(j.lib), films = cleanFilms(j.films), people = cleanPeople(j.people);
-    const what = Object.keys(lib).length + ' series, ' + plural(Object.keys(films).length, 'film') + ', ' + plural(Object.keys(people).length, 'actor');
+    const lib = cleanLib(j.lib), films = cleanFilms(j.films), people = cleanPeople(j.people), theme = cleanTheme(j.theme);
+    const what = Object.keys(lib).length + ' series, ' + plural(Object.keys(films).length, 'film') + ', ' + plural(Object.keys(people).length, 'actor') + (theme ? ', ' + plural(theme.length, 'theme pick') : '');
     if (!window.confirm('Replace the progress on this device with the backup (' + what + ')?')) return;
     S.lib = lib; S.films = films; S.people = people;
     saveLib(); saveFilms(); savePeople();
+    if (theme) { S.theme = theme; saveTheme(); }
     for (const id of [...personMem.keys()]) if (!S.people[id]) personMem.delete(id);
     saveCredits();
     pendingReload = true;
@@ -1901,6 +2206,13 @@ function route(back) {
   const h = location.hash || '#/';
   const ms = h.match(/^#\/show\/(\d+)\/s\/(\d+)$/);
   if (!ms && panelSeason !== null) closePanel();
+  const mt = h.match(/^#\/profile\/(?:(add)|edit\/([mt]-[a-z0-9-]*))$/);
+  if (!mt && tpPanel) closeTpPanel();
+  if (mt) {
+    if (current !== 'profile') { showView('profile'); profileTab = 'picks'; paintProfile(); }
+    openTpPanel(mt[1] ? 'add' : 'edit', mt[2]);
+    return;
+  }
   if (ms) {
     const id = Number(ms[1]), n = Number(ms[2]);
     if (current === 'show' && showing && showing.id === id && showing.name) { openPanel(showing, n); return; }
@@ -1915,7 +2227,10 @@ function route(back) {
   if (mp) { showView('person'); openPerson(Number(mp[1]), back); return; }
   const mf = h.match(/^#\/film\/(\d+)$/);
   if (mf) { showView('film'); openFilm(Number(mf[1])); return; }
-  if (h === '#/profile') { showView('profile'); paintProfile(); return; }
+  if (h === '#/profile') {
+    if (current === 'profile' && !openSheet) { paintProfile(); return; }   // back from a Theme picks panel: keep the scroll position
+    showView('profile'); paintProfile(); return;
+  }
   if (h === '#/filters') { showView('list', 'filters'); openFilters(); if (!listReady) ensureList(); return; }
   if (h === '#/settings') { showView('list', 'settings'); paintSettings(); if (!listReady) ensureList(); return; }
   showView('list');
@@ -1936,8 +2251,10 @@ window.addEventListener('hashchange', () => {
 });
 function goBack() {
   const panel = (location.hash || '').match(/^#\/show\/(\d+)\/s\/\d+$/);
+  const tp = /^#\/profile\/./.test(location.hash || '');
   if (stack.length > 1) history.back();
   else if (panel) location.replace('#/show/' + panel[1]);
+  else if (tp) location.replace('#/profile');
   else location.hash = '#/';
 }
 
@@ -1992,7 +2309,27 @@ document.addEventListener('click', (ev) => {
   }
   if ((el = t.closest('[data-back]'))) { ev.preventDefault(); goBack(); return; }
   if ((el = t.closest('[data-ptab]'))) { profileTab = el.dataset.ptab; store.set(LS.ptab, profileTab); paintProfile(); return; }
-  if ((el = t.closest('.pick[data-wait]'))) { ev.preventDefault(); toast('Still looking this title up on TMDB. Try again in a moment.'); return; }
+  if ((el = t.closest('.tp-link[data-wait]'))) { ev.preventDefault(); toast('Still looking this title up on TMDB. Try again in a moment.'); return; }
+  if ((el = t.closest('[data-tptype]'))) { tpf.type = el.dataset.tptype; saveTpf(); paintTpResults(); return; }
+  if ((el = t.closest('[data-tptag]'))) {
+    const name = el.dataset.tptag;
+    tpf.tags = tpf.tags.some((x) => az(x, name) === 0) ? tpf.tags.filter((x) => az(x, name) !== 0) : uniqTags(tpf.tags.concat(name));
+    saveTpf(); paintTpResults(); return;
+  }
+  if (t.closest('[data-tpclear]')) { tpf.type = 'all'; tpf.tags = []; saveTpf(); paintTpResults(); return; }
+  if (tpPanel && t.closest('#panel')) {
+    if ((el = t.closest('[data-tpt]'))) { tpToggleTag(el.dataset.tpt); return; }
+    if ((el = t.closest('[data-tpsel]'))) {
+      tpPanel.sel = Number(el.dataset.tpsel);
+      document.querySelectorAll('#tp-results [data-tpsel]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.tpsel) === tpPanel.sel)));
+      const add = $('#tp-add');
+      if (add) add.disabled = false;
+      return;
+    }
+    if (t.closest('[data-act="tp-newtag"]')) { tpAddTag(); return; }
+    if (t.closest('[data-act="tp-add"]')) { tpAddTitle(); return; }
+    if (t.closest('[data-act="tp-remove"]')) { tpRemoveTitle(); return; }
+  }
   if ((el = t.closest('[data-tab]'))) {
     if ((el.dataset.tab === 'actors') !== (S.tab === 'actors')) { clearTimeout(qTimer); S.q = ''; $('#q').value = ''; S.searchAll = false; actorSug.list = null; actorSug.token++; }
     S.tab = el.dataset.tab;
@@ -2100,11 +2437,18 @@ document.addEventListener('click', (ev) => {
     }
   }
 });
-window.addEventListener('pagehide', () => flushNote());
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNote(); });
+window.addEventListener('pagehide', () => { flushNote(); flushTpNote(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { flushNote(); flushTpNote(); } });
+document.addEventListener('keydown', (ev) => {
+  const t = ev.target;
+  if (ev.key !== 'Enter' || !(t instanceof HTMLInputElement)) return;
+  if (t.id === 'tp-newtag') { ev.preventDefault(); tpAddTag(); }
+  else if (t.id === 'tp-q') t.blur();
+});
 document.addEventListener('change', (ev) => {
   const t = ev.target;
   if (t instanceof HTMLTextAreaElement && t.id === 'note') { flushNote(); return; }
+  if (t instanceof HTMLTextAreaElement && t.id === 'tp-note') { flushTpNote(); return; }
   if (!(t instanceof HTMLInputElement)) return;
   if (t.dataset.season && showing && showing.name) setSeen(showing, [Number(t.dataset.season)], t.checked);
   else if (t.dataset.toggle && draft) draft[t.dataset.toggle] = t.checked;
@@ -2113,6 +2457,8 @@ document.addEventListener('change', (ev) => {
 document.addEventListener('input', (ev) => {
   const t = ev.target;
   if (t instanceof HTMLInputElement && t.dataset.pick) pickSearch(t.dataset.pick, t.value);
+  else if (t instanceof HTMLInputElement && t.id === 'tp-q') tpSearch(t.value);
+  else if (t instanceof HTMLTextAreaElement && t.id === 'tp-note') { clearTimeout(tpNoteTimer); tpNoteTimer = setTimeout(flushTpNote, 400); }
   else if (t instanceof HTMLTextAreaElement && t.id === 'note') { clearTimeout(noteTimer); noteTimer = setTimeout(flushNote, 500); }
 });
 
