@@ -77,6 +77,14 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chips.even { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .chips.even .chip { padding: 0 4px; }
+.chips.even3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.chips.even3 .chip { padding: 0 4px; }
+.subbox { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 10px; background: var(--surface); }
+.subbox b { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--accent); }
+.subbox .switch span { display: flex; flex-direction: column; gap: 1px; }
+.subbox .switch small { font-size: 12px; line-height: 16px; color: var(--muted); }
+.group-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.group-h .note { font-size: 12px; }
 .h-sec { font-family: var(--display); font-weight: 600; font-size: 20px; line-height: 22px; text-transform: uppercase; letter-spacing: .05em; text-wrap: balance; }
 .note { font-size: 13px; line-height: 19px; color: var(--muted); }
 .err { color: var(--danger); font-size: 14px; }
@@ -327,6 +335,7 @@ a.person:hover { color: var(--text); }
 .tp-new .field { flex: 1; min-width: 0; }
 .tp-new .btn { flex: none; min-height: 48px; padding: 0 18px; }
 .tp-note { min-height: 96px; }
+.tp-seen { margin-top: 4px; }
 .text-btn.danger { align-self: flex-start; color: var(--danger); }
 .tp-res button { flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; min-height: 64px; color: var(--text); }
 .tp-res button[disabled] { opacity: .5; }
@@ -343,7 +352,7 @@ a.person:hover { color: var(--text); }
 .sheet-head h1 { flex: 1; font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1; text-transform: uppercase; letter-spacing: .03em; }
 .sheet-body { display: flex; flex-direction: column; gap: 24px; padding: 8px var(--gutter) 24px; }
 .group { display: flex; flex-direction: column; gap: 10px; }
-.group > h2, .group > label.h { font-family: var(--display); font-weight: 600; font-size: 17px; line-height: 18px; text-transform: uppercase; letter-spacing: .06em; }
+.group > h2, .group > label.h, .group-h > h2 { font-family: var(--display); font-weight: 600; font-size: 17px; line-height: 18px; text-transform: uppercase; letter-spacing: .06em; }
 .results { display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); }
 .results:empty { display: none; }
 .results button { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 48px; padding: 6px 14px; border: 0; background: none; text-align: left; font-size: 14px; }
@@ -391,7 +400,7 @@ a.person:hover { color: var(--text); }
       <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"></path></svg>
       </a>
     </div>
-    <p>Finished crime series in English, from 1990 on</p>
+    <p id="subtitle">Finished crime series in English, from 1990 on</p>
   </header>
   <div class="sticky">
     <div class="searchrow">
@@ -432,13 +441,17 @@ a.person:hover { color: var(--text); }
 /* ---------- constants ---------- */
 const API = 'https://api.themoviedb.org/3';
 const IMG = 'https://image.tmdb.org/t/p/';
-const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1', people: 'cc.people', films: 'cc.films', credits: 'cc.credits', picks: 'cc.picks.v1', ptab: 'cc.ptab', theme: 'cc.theme.v1', tpf: 'cc.tpf' };
+const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1', people: 'cc.people', films: 'cc.films', credits: 'cc.credits', picks: 'cc.picks.v1', ptab: 'cc.ptab', theme: 'cc.theme.v1', tpf: 'cc.tpf', kw2: 'cc.kw2.v1', mmeta: 'cc.mmeta.v1' };
 const META_TTL = 60 * 24 * 3600 * 1000;
 const FIRST_YEAR = 1990;
 
-const GENRES = [{ key: 'crime', id: 80, label: 'Crime' }, { key: 'mystery', id: 9648, label: 'Mystery' }];
+const GENRES = [{ key: 'crime', id: 80, label: 'Crime' }, { key: 'mystery', id: 9648, label: 'Mystery' }, { key: 'truecrime', label: 'True crime' }, { key: 'truestory', label: 'True story' }];
+const TYPES = [['series', 'Series'], ['movies', 'Movies'], ['both', 'Both']];
 const UNSCRIPTED_GENRES = [99, 10764];          // Documentary, Reality
 const NEVER_GENRES = [10763, 10767];            // News, Talk
+const FAKE_GENRES = [27, 14, 878, 10765, 16, 10762, 10764];   // never true crime or a true story: horror, fantasy, sci-fi, animation, kids, reality
+const NOT_TRUE_TV = [99, 10765, 16, 10762, 10764, 10767, 10763];
+const NOT_TRUE_MOVIE = [99, 27, 14, 878, 16];
 const FOCUS = [
   { key: 'police', label: 'Police', terms: ['police', 'police procedural', 'police detective', 'police officer', 'cop', 'police department'] },
   { key: 'detective', label: 'Detective', terms: ['detective', 'private detective', 'private investigator', 'amateur detective', 'whodunit', 'murder mystery'] },
@@ -469,7 +482,7 @@ const SEASONS = [
   { key: '4-6', label: '4 to 6', min: 4, max: 6 }, { key: '7+', label: '7 or more', min: 7, max: 999 }
 ];
 const RATINGS = [{ v: null, label: 'Any' }, { v: 7, label: '7 or more' }, { v: 8, label: '8 or more' }];
-const DEFAULT_FILTERS = { sort: 'popular', actor: null, creator: null, genres: ['crime'], focus: [], decade: null, country: null, network: null, seasons: null, rating: null, canceled: true, unscripted: false };
+const DEFAULT_FILTERS = { type: 'series', sort: 'popular', actor: null, creator: null, genres: ['crime'], tcDocs: true, tcDrama: true, focus: [], decade: null, country: null, network: null, seasons: null, rating: null, canceled: true, unscripted: false };
 const TABS = [['all', 'All'], ['interested', 'Interested'], ['completed', 'Completed'], ['actors', 'Actors']];
 const TILES = ['#1F3350', '#17434A', '#4A3A1C', '#5A2328', '#2F3F2A', '#5C3A1E', '#2B2F45', '#4E1F2B', '#1F4035', '#3A2F55', '#3B3F47', '#25404F'];
 
@@ -530,6 +543,11 @@ function cleanFilters(raw) {
   for (const k of ['actor', 'creator']) if (!(f[k] && Number(f[k].id) && f[k].name)) f[k] = null;
   f.canceled = f.canceled !== false;
   f.unscripted = f.unscripted === true;
+  if (!TYPES.some((t) => t[0] === f.type)) f.type = 'series';
+  f.tcDocs = f.tcDocs !== false;
+  f.tcDrama = f.tcDrama !== false;
+  if (!f.tcDocs && !f.tcDrama) { f.tcDocs = true; f.tcDrama = true; }
+  if (f.type === 'movies') { f.network = null; f.seasons = null; f.canceled = true; }
   return f;
 }
 function cleanLib(raw) {
@@ -595,6 +613,7 @@ const S = {
   q: '',
   searchAll: false,
   focusMap: store.get(LS.kw, null),
+  trueMap: store.get(LS.kw2, null),
   badNets: store.get(LS.nets, null)
 };
 const diag = [];
@@ -662,7 +681,7 @@ function slim(d) {
   return {
     id: d.id, n: d.name || d.original_name || 'Untitled', y: yearOf(d.first_air_date), e: yearOf(d.last_air_date),
     s: Number(d.number_of_seasons) || 0, st: d.status || '', p: d.poster_path || null,
-    nw: (d.networks || []).map((x) => x.id),
+    nw: (d.networks || []).map((x) => x.id), g: (d.genres || []).map((x) => x.id),
     k: ((d.keywords && d.keywords.results) || []).map((x) => x.id),
     t: Date.now()
   };
@@ -873,11 +892,13 @@ function posterHTML(path, name, id) {
 function caption(m) {
   const parts = [];
   if (m.y) parts.push(String(m.y));
+  if (m.kind === 'm') { parts.push(m.doc ? 'Doc movie' : 'Movie'); return parts.join(' · '); }
+  if ((m.g || []).includes(99)) parts.push('Doc');
   if (m.s) parts.push(plural(m.s, 'season'));
   return parts.join(' · ');
 }
 function cardHTML(m) {
-  return '<a class="card" data-id="' + m.id + '" href="#/show/' + m.id + '">' + posterHTML(m.p, m.n, m.id) +
+  return (m.kind === 'm' ? '<a class="card" data-film="' + m.id + '" href="#/film/' + m.id + '">' : '<a class="card" data-id="' + m.id + '" href="#/show/' + m.id + '">') + posterHTML(m.p, m.n, m.id) +
     '<div class="cap"><div class="cap-name">' + esc(m.n) + '</div><div class="cap-meta">' + esc(caption(m)) + '</div></div></a>';
 }
 /* marks each cover from the library: faded when completed (All tab only), a progress bar while watching */
@@ -919,44 +940,213 @@ let peopleToken = 0;
 
 const mode = () => (S.q.trim() ? 'search' : (S.filters.actor || S.filters.creator) ? 'person' : 'discover');
 const signature = () => JSON.stringify([S.q.trim(), S.searchAll, S.filters]);
-const genreIds = (f) => GENRES.filter((g) => f.genres.includes(g.key)).map((g) => g.id);
+const kindsOf = (f) => (f.type === 'movies' ? ['m'] : f.type === 'both' ? ['t', 'm'] : ['t']);
+const baseIds = (f) => GENRES.filter((g) => g.id && f.genres.includes(g.key)).map((g) => g.id);
+const wantsTC = (f) => f.genres.includes('truecrime');
+const wantsTS = (f) => f.genres.includes('truestory');
 const focusIds = (f) => { const ids = new Set(); for (const k of f.focus) for (const id of ((S.focusMap && S.focusMap[k]) || [])) ids.add(id); return [...ids]; };
 const seasonRange = (f) => SEASONS.find((s) => s.key === f.seasons) || null;
 const okStatus = (st, f) => st === 'Ended' || (f.canceled && st === 'Canceled');
+const itemKey = (m) => (m.kind === 'm' ? 'm' : 't') + m.id;
+const itemDone = (m) => (m.kind === 'm' ? !!S.films[m.id] : isDone(S.lib[m.id]));
+const nounFor = (f) => (f.type === 'movies' ? 'movies' : f.type === 'both' ? 'series and movies' : 'series');
 
-function discoverParams(f, page) {
-  const p = {
-    language: 'en-US', include_adult: 'false', page: page,
-    with_original_language: 'en',
-    'first_air_date.gte': FIRST_YEAR + '-01-01',
-    with_status: f.canceled ? '3|4' : '3',
-    with_genres: genreIds(f).join('|'),
-    sort_by: (SORTS.find((s) => s.key === f.sort) || SORTS[0]).api
-  };
-  if (!f.unscripted) p.with_type = '2|4';
-  if (f.decade) { p['first_air_date.gte'] = f.decade + '-01-01'; p['first_air_date.lte'] = (f.decade + 9) + '-12-31'; }
+/* keyword ids behind True crime and True story, looked up once by name like the Focus chips */
+const TRUE_TERMS = {
+  true: ['based on true story', 'based on real events', 'based on a true story', 'true story', 'biography', 'based on real person', 'true crime'],
+  tc: ['true crime'],
+  crime: ['crime', 'murder', 'serial killer', 'police', 'detective', 'investigation', 'murder investigation', 'criminal investigation', 'fbi', 'kidnapping',
+    'wrongful conviction', 'miscarriage of justice', 'investigative journalism', 'trial', 'courtroom', 'con artist', 'fraud', 'scam', 'heist', 'bank robbery',
+    'mafia', 'organized crime', 'gangster', 'drug cartel', 'drug trafficking', 'corruption', 'police corruption', 'cult', 'child abuse', 'sexual abuse',
+    'assassination', 'hostage', 'manhunt', 'cold case', 'forensic science', 'death penalty', 'prison', 'embezzlement', 'hate crime', 'cover-up']
+};
+let trueJob = null, trueRetry = false;
+function resolveTrue() {
+  if (S.trueMap && !trueRetry) return Promise.resolve(S.trueMap);
+  if (trueJob) return trueJob;
+  trueRetry = false;
+  trueJob = (async () => {
+    const map = {};
+    let failed = false;
+    for (const key of Object.keys(TRUE_TERMS)) map[key] = [];
+    await Promise.all(Object.keys(TRUE_TERMS).map((key) => Promise.all(TRUE_TERMS[key].map(async (term) => {
+      try {
+        const r = await limit(() => tmdb('/search/keyword', { query: term, page: 1 }));
+        for (const k of (r.results || [])) if (String(k.name || '').toLowerCase() === term && !map[key].includes(k.id)) map[key].push(k.id);
+      } catch (e) { failed = true; }
+    }))));
+    S.trueMap = map;
+    if (!failed) store.set(LS.kw2, map); else trueRetry = true;
+    trueJob = null;
+    return map;
+  })();
+  return trueJob;
+}
+/* Does a title belong to the chosen genres? true, false, or null when its keywords are needed to decide.
+   hint says what the stream it came from already guarantees: 'true' (a based-on-a-true-story keyword) or 'tc' (the true crime keyword). */
+function matchSources(f, g, k, hint) {
+  if (g.some((id) => NEVER_GENRES.includes(id))) return false;
+  const base = baseIds(f);
+  if (base.length && g.some((id) => base.includes(id)) && (f.unscripted || !g.includes(99))) return true;
+  if (!wantsTC(f) && !wantsTS(f)) return false;
+  if (g.some((id) => FAKE_GENRES.includes(id))) return false;
+  const map = S.trueMap || {};
+  const has = (ids) => (k ? k.some((id) => ids.includes(id)) : null);
+  let unknown = false;
+  const doc = g.includes(99);
+  const crimeish = g.includes(80) || hint === 'tc' ? true : has((map.crime || []).concat(map.tc || []));
+  if (doc) {
+    if (wantsTC(f) && f.tcDocs) { if (crimeish === true) return true; if (crimeish === null) unknown = true; }
+    return unknown ? null : false;
+  }
+  const story = hint === 'true' ? true : has(map.true || []);
+  if (story === false) return false;
+  if (wantsTS(f)) { if (story === true) return true; unknown = true; }
+  if (wantsTC(f) && f.tcDrama) {
+    if (story === true && crimeish === true) return true;
+    if (crimeish !== false) unknown = true;
+  }
+  return unknown ? null : false;
+}
+
+/* one discover query per kind and per source; they are merged in sort order as the list scrolls */
+function commonParams(kind, f) {
+  const p = { language: 'en-US', include_adult: 'false', with_original_language: 'en' };
+  const sort = f.sort;
+  if (kind === 't') {
+    p.sort_by = (SORTS.find((s) => s.key === sort) || SORTS[0]).api;
+    p['first_air_date.gte'] = (f.decade || FIRST_YEAR) + '-01-01';
+    if (f.decade) p['first_air_date.lte'] = (f.decade + 9) + '-12-31';
+    p.with_status = f.canceled ? '3|4' : '3';
+    if (f.network) p.with_networks = f.network;
+  } else {
+    p.sort_by = { rating: 'vote_average.desc', newest: 'primary_release_date.desc', oldest: 'primary_release_date.asc', az: 'title.asc' }[sort] || 'popularity.desc';
+    p['primary_release_date.gte'] = (f.decade || FIRST_YEAR) + '-01-01';
+    const today = new Date().toISOString().slice(0, 10);
+    const end = f.decade ? (f.decade + 9) + '-12-31' : today;
+    p['primary_release_date.lte'] = end < today ? end : today;
+    p.include_video = 'false';
+  }
   if (f.country) p.with_origin_country = f.country;
-  if (f.network) p.with_networks = f.network;
   let minVotes = 0;
-  if (f.rating) { p['vote_average.gte'] = f.rating; minVotes = 20; }
-  if (f.sort === 'rating') minVotes = 50;
+  if (f.rating) { p['vote_average.gte'] = f.rating; minVotes = kind === 'm' ? 50 : 20; }
+  if (sort === 'rating') minVotes = kind === 'm' ? 200 : 50;
   if (minVotes) p['vote_count.gte'] = minVotes;
-  if (f.focus.length) p.with_keywords = focusIds(f).join('|');
   return p;
 }
-/* scope test on a search or credits result, before details are fetched */
-function inScope(c, f, strict) {
+function streamsFor(f) {
+  const out = [];
+  const base = baseIds(f);
+  const special = wantsTC(f) || wantsTS(f);
+  for (const kind of kindsOf(f)) {
+    const common = commonParams(kind, f);
+    if (base.length) {
+      const p = Object.assign({}, common, { with_genres: base.join('|') });
+      if (!f.unscripted) { if (kind === 't') p.with_type = '2|4'; else p.without_genres = '99'; }
+      if (f.focus.length) p.with_keywords = focusIds(f).join('|');
+      out.push({ kind, params: p, hint: '', exact: !special && kind === 't' && !f.seasons });
+    }
+    if (wantsTC(f) && f.tcDocs) {
+      out.push({ kind, params: Object.assign({}, common, { with_genres: '99,80' }), hint: '' });
+      const tc = (S.trueMap && S.trueMap.tc) || [];
+      if (tc.length) out.push({ kind, params: Object.assign({}, common, { with_genres: '99', with_keywords: tc.join('|') }), hint: 'tc' });
+    }
+    if ((wantsTC(f) && f.tcDrama) || wantsTS(f)) {
+      const tr = (S.trueMap && S.trueMap.true) || [];
+      if (tr.length) out.push({ kind, params: Object.assign({}, common, { with_keywords: tr.join('|'), without_genres: (kind === 't' ? NOT_TRUE_TV : NOT_TRUE_MOVIE).join(',') }), hint: 'true' });
+    }
+  }
+  return out.map((s) => Object.assign(s, { page: 0, pages: 1, buf: [], end: false, total: 0 }));
+}
+const candDate = (c) => (c._k === 'm' ? c.release_date : c.first_air_date) || '';
+const candName = (c) => (c._k === 'm' ? c.title || c.original_title : c.name || c.original_name) || '';
+function before(a, b, sort) {
+  if (sort === 'rating') return (a.vote_average || 0) > (b.vote_average || 0);
+  if (sort === 'newest') return candDate(a) > candDate(b);
+  if (sort === 'oldest') return candDate(a) < candDate(b);
+  if (sort === 'az') return candName(a).localeCompare(candName(b)) < 0;
+  return (a.popularity || 0) > (b.popularity || 0);
+}
+const byOrder = (sort) => (x, y) => (before(x, y, sort) ? -1 : before(y, x, sort) ? 1 : 0);
+async function fillStream(b, s) {
+  const page = s.page + 1;
+  const r = await tmdb(s.kind === 't' ? '/discover/tv' : '/discover/movie', Object.assign({ page: page }, s.params));
+  s.page = page;
+  s.pages = Math.min(Number(r.total_pages) || 1, 500);
+  s.total = Number(r.total_results) || 0;
+  const list = (r.results || []).map((c) => Object.assign(c, { _k: s.kind, _h: s.hint }));
+  s.buf.push(...list);
+  b.scanned += list.length;
+  if (page >= s.pages || !list.length) s.end = true;
+}
+/* the next n candidates across all streams, in the chosen order */
+async function pullCandidates(b, n, sort) {
+  const out = [];
+  while (out.length < n) {
+    const need = b.streams.filter((s) => !s.buf.length && !s.end);
+    if (need.length) await Promise.all(need.map((s) => fillStream(b, s)));
+    if (b.token !== browseToken) return out;
+    let best = null;
+    for (const s of b.streams) if (s.buf.length && (!best || before(s.buf[0], best.buf[0], sort))) best = s;
+    if (!best) break;
+    out.push(best.buf.shift());
+  }
+  return out;
+}
+
+/* movies: a slim record like the series one, with keywords, kept on the device */
+const mmetaMem = new Map();
+{
+  const saved = store.get(LS.mmeta, {});
+  if (saved && typeof saved === 'object') for (const k of Object.keys(saved)) if (saved[k] && saved[k].id) mmetaMem.set(Number(k), saved[k]);
+}
+const mpending = new Map();
+let mmetaTimer = 0;
+function saveMMetaSoon() {
+  clearTimeout(mmetaTimer);
+  mmetaTimer = setTimeout(() => {
+    let entries = [...mmetaMem.entries()];
+    if (entries.length > 3000) { entries.sort((a, b) => b[1].t - a[1].t); entries = entries.slice(0, 2500); }
+    if (!store.set(LS.mmeta, Object.fromEntries(entries))) { entries.sort((a, b) => b[1].t - a[1].t); store.set(LS.mmeta, Object.fromEntries(entries.slice(0, Math.floor(entries.length / 2)))); }
+  }, 1500);
+}
+const movieOf = (c) => ({ kind: 'm', id: c.id, n: c.title || c.original_title || 'Untitled', y: yearOf(c.release_date), p: c.poster_path || null, doc: (c.genre_ids || []).includes(99) });
+function getMovieMeta(id) {
+  const c = mmetaMem.get(id);
+  if (c && Date.now() - c.t < META_TTL) return Promise.resolve(c);
+  if (mpending.has(id)) return mpending.get(id);
+  const p = limit(() => tmdb('/movie/' + id, { language: 'en-US', append_to_response: 'keywords' }))
+    .then((d) => {
+      const m = { kind: 'm', id: d.id, n: d.title || d.original_title || 'Untitled', y: yearOf(d.release_date), p: d.poster_path || null,
+        doc: (d.genres || []).some((x) => x.id === 99), k: ((d.keywords && (d.keywords.keywords || d.keywords.results)) || []).map((x) => x.id), t: Date.now() };
+      mmetaMem.set(id, m); saveMMetaSoon(); return m;
+    })
+    .finally(() => mpending.delete(id));
+  mpending.set(id, p);
+  return p;
+}
+
+/* scope test on a search result, before details are fetched */
+function inScopeLoose(c, f) {
   if (c.original_language !== 'en') return false;
-  const y = yearOf(c.first_air_date);
+  const y = yearOf(candDate(c));
   if (!y || y < FIRST_YEAR) return false;
   const g = c.genre_ids || [];
-  const wanted = strict ? genreIds(f) : GENRES.map((x) => x.id);
-  if (!g.some((id) => wanted.includes(id))) return false;
-  if (!strict) return true;
   if (g.some((id) => NEVER_GENRES.includes(id))) return false;
-  if (!f.unscripted && g.some((id) => UNSCRIPTED_GENRES.includes(id))) return false;
+  if (g.includes(80) || g.includes(9648)) return true;
+  if (wantsTC(f) && g.includes(99)) return true;
+  if ((wantsTC(f) || wantsTS(f)) && (g.includes(18) || g.includes(36))) return true;
+  return false;
+}
+/* the same for an actor's or creator's credits, where the filters apply in full */
+function inScopeStrict(c, f) {
+  if (c.original_language && c.original_language !== 'en') return false;
+  const y = yearOf(candDate(c));
+  if (!y || y < FIRST_YEAR) return false;
+  if (c._k === 'm' && candDate(c) > new Date().toISOString().slice(0, 10)) return false;
+  if ((c.genre_ids || []).some((id) => NEVER_GENRES.includes(id))) return false;
   if (f.decade && (y < f.decade || y > f.decade + 9)) return false;
-  if (f.country && !(c.origin_country || []).includes(f.country)) return false;
+  if (f.country && c._k === 't' && !(c.origin_country || []).includes(f.country)) return false;
   if (f.rating && !((c.vote_average || 0) >= f.rating && (c.vote_count || 0) >= 20)) return false;
   return true;
 }
@@ -968,25 +1158,54 @@ function passesMeta(m, f, how) {
   if (r && !(m.s >= r.min && m.s <= r.max)) return false;
   if (how === 'seasons') return true;
   if (f.network && !(m.nw || []).includes(f.network)) return false;
-  if (f.focus.length) { const ids = focusIds(f); if (!(m.k || []).some((id) => ids.includes(id))) return false; }
   return true;
+}
+/* fetch what each candidate needs and keep the ones that pass, as { c, m } in the same order */
+async function evaluate(cands, f, how) {
+  const strict = how === 'full' || how === 'seasons';
+  const ids = f.focus.length ? focusIds(f) : null;
+  const rows = await Promise.all(cands.map(async (c) => {
+    try {
+      const g = c.genre_ids || [];
+      if (c._k !== 'm') {
+        const m0 = await getMeta(c.id);
+        if (!m0 || !passesMeta(m0, f, how)) return null;
+        if (strict) {
+          if (matchSources(f, g, m0.k || [], c._h) !== true) return null;
+          if (ids && !(m0.k || []).some((id) => ids.includes(id))) return null;
+        }
+        return { c, m: m0.g ? m0 : Object.assign({}, m0, { g: g }) };
+      }
+      let m = movieOf(c);
+      if (strict) {
+        let ok = matchSources(f, g, null, c._h);
+        if (ok === null || (ids && ok)) { m = await getMovieMeta(c.id); ok = matchSources(f, g, m.k, c._h); }
+        if (ok !== true) return null;
+        if (ids && !m.k.some((id) => ids.includes(id))) return null;
+      }
+      return { c, m };
+    } catch (e) { return null; }
+  }));
+  return rows.filter(Boolean);
 }
 
 function startBrowse() {
   if (browse && browse.sig === signature() && !browse.error) { paintBrowse(); return; }
-  const b = browse = { token: ++browseToken, sig: signature(), mode: mode(), items: [], ids: new Set(), page: 0, pages: 1, total: null, loading: false, done: false, stalled: false, error: null, people: [], scanned: 0 };
+  const b = browse = { token: ++browseToken, sig: signature(), mode: mode(), items: [], ids: new Set(), page: 0, pages: 1, total: null, loading: false, done: false, stalled: false, error: null, people: [], scanned: 0, streams: null, kp: {} };
   paintBrowse();
   if (b.mode === 'search') loadPeople(S.q.trim());
   loadMore();
 }
+/* seen titles leave the list unless they were searched for by name */
 function dropDone() {
   if (!browse || browse.mode === 'search') return;
-  browse.items = browse.items.filter((m) => !isDone(S.lib[m.id]));
+  browse.items = browse.items.filter((m) => !itemDone(m));
   document.querySelectorAll('#grid .card[data-id]').forEach((card) => { if (isDone(S.lib[Number(card.dataset.id)])) card.remove(); });
+  document.querySelectorAll('#grid .card[data-film]').forEach((card) => { if (S.films[card.dataset.film]) card.remove(); });
 }
 function paintBrowse() {
   if (S.tab !== 'all' || !browse) return;
-  if (browse.mode !== 'search') browse.items = browse.items.filter((m) => !isDone(S.lib[m.id]));
+  if (browse.mode !== 'search') browse.items = browse.items.filter((m) => !itemDone(m));
   $('#grid').innerHTML = browse.items.map(cardHTML).join('');
   syncCards();
   paintUnder();
@@ -999,7 +1218,17 @@ async function loadPeople(q) {
     if (token !== peopleToken || !browse || browse.mode !== 'search') return;
     browse.people = (r.results || []).filter((p) => p.name).slice(0, 6).map((p) => ({ id: p.id, name: p.name, dept: p.known_for_department || '' }));
     paintUnder();
-  } catch (e) { /* the series results still show */ }
+  } catch (e) { /* the title results still show */ }
+}
+function addRows(b, rows, skipDone) {
+  let html = '', added = 0;
+  for (const { m } of rows) {
+    const key = itemKey(m);
+    if (b.ids.has(key) || (skipDone && itemDone(m))) continue;
+    b.ids.add(key); b.items.push(m); html += cardHTML(m); added++;
+  }
+  if (html && S.tab === 'all') { $('#grid').insertAdjacentHTML('beforeend', html); syncCards(); }
+  return added;
 }
 async function loadMore() {
   const b = browse;
@@ -1011,33 +1240,51 @@ async function loadMore() {
   try {
     if (b.mode === 'person') {
       added = await loadPerson(b, f);
-    } else {
-      if (b.mode === 'discover' && f.focus.length) { await resolveFocus(); if (!focusIds(f).length) { b.done = true; b.total = 0; return; } }
+    } else if (b.mode === 'search') {
+      const kinds = kindsOf(f);
       let rounds = 0;
       while (!b.done && added < 12 && rounds < 4) {
         const page = b.page + 1;
-        const r = b.mode === 'search'
-          ? await tmdb('/search/tv', { query: S.q.trim(), page: page, language: 'en-US', include_adult: 'false' })
-          : await tmdb('/discover/tv', discoverParams(f, page));
+        const rs = await Promise.all(kinds.map((k) => (b.kp[k] && page > b.kp[k])
+          ? Promise.resolve({ results: [], total_pages: b.kp[k] })
+          : tmdb(k === 't' ? '/search/tv' : '/search/movie', { query: S.q.trim(), page: page, language: 'en-US', include_adult: 'false' })));
         if (b.token !== browseToken) return;
+        let cands = [];
+        kinds.forEach((k, i) => {
+          b.kp[k] = Math.min(Number(rs[i].total_pages) || 1, 15);
+          for (const c of (rs[i].results || [])) cands.push(Object.assign(c, { _k: k, _h: '' }));
+        });
         b.page = page;
-        b.pages = Math.min(Number(r.total_pages) || 1, b.mode === 'search' ? 15 : 500);
-        if (b.mode === 'discover') b.total = Number(r.total_results) || 0;
-        let cands = r.results || [];
-        b.scanned += cands.length;
-        if (b.mode === 'search' && !S.searchAll) cands = cands.filter((c) => inScope(c, f, false));
-        const metas = await Promise.all(cands.map((c) => getMeta(c.id).catch(() => null)));
+        b.pages = Math.max(...kinds.map((k) => b.kp[k]));
+        const raw = cands.length;
+        b.scanned += raw;
+        cands.sort(byOrder('popular'));
+        if (!S.searchAll) cands = cands.filter((c) => inScopeLoose(c, f));
+        const rows = await evaluate(cands, f, S.searchAll ? 'all' : 'scope');
         if (b.token !== browseToken) return;
-        const how = b.mode === 'search' ? (S.searchAll ? 'all' : 'scope') : 'seasons';
-        let html = '';
-        for (const m of metas) {
-          if (!m || b.ids.has(m.id) || !passesMeta(m, f, how) || (b.mode !== 'search' && isDone(S.lib[m.id]))) continue;
-          b.ids.add(m.id); b.items.push(m); html += cardHTML(m); added++;
-        }
-        if (html && S.tab === 'all') { $('#grid').insertAdjacentHTML('beforeend', html); syncCards(); }
+        added += addRows(b, rows, false);
         rounds++;
-        if (b.page >= b.pages || !(r.results || []).length) b.done = true;
+        if (b.page >= b.pages || !raw) b.done = true;
       }
+    } else {
+      if (f.focus.length) { await resolveFocus(); if (!focusIds(f).length) { b.done = true; b.total = 0; return; } }
+      if (wantsTC(f) || wantsTS(f)) await resolveTrue();
+      if (b.token !== browseToken) return;
+      if (!b.streams) b.streams = streamsFor(f);
+      if (!b.streams.length) { b.done = true; b.total = 0; return; }
+      let rounds = 0;
+      while (!b.done && added < 12 && rounds < 4) {
+        const cands = await pullCandidates(b, 20, f.sort);
+        if (b.token !== browseToken) return;
+        if (cands.length) {
+          const rows = await evaluate(cands, f, 'seasons');
+          if (b.token !== browseToken) return;
+          added += addRows(b, rows, true);
+        }
+        rounds++;
+        if (!cands.length || b.streams.every((s) => s.end && !s.buf.length)) b.done = true;
+      }
+      b.total = b.streams.length === 1 && b.streams[0].exact ? b.streams[0].total : null;
     }
     if (!b.done && added === 0) b.stalled = true;
   } catch (err) {
@@ -1052,29 +1299,26 @@ async function loadMore() {
   }
 }
 async function loadPerson(b, f) {
-  const lists = [];
-  if (f.actor) lists.push(((await tmdb('/person/' + f.actor.id + '/tv_credits', { language: 'en-US' })).cast) || []);
-  if (f.creator) lists.push(((await tmdb('/person/' + f.creator.id + '/tv_credits', { language: 'en-US' })).crew) || []);
   if (f.focus.length) await resolveFocus();
-  if (b.token !== browseToken) return 0;
-  const byId = new Map();
-  for (const c of lists[0]) if (!byId.has(c.id)) byId.set(c.id, c);
-  for (const l of lists.slice(1)) { const ids = new Set(l.map((c) => c.id)); for (const id of [...byId.keys()]) if (!ids.has(id)) byId.delete(id); }
-  const cands = [...byId.values()].filter((c) => inScope(c, f, true));
-  const metas = await Promise.all(cands.map((c) => getMeta(c.id).catch(() => null)));
-  if (b.token !== browseToken) return 0;
-  const rows = [];
-  cands.forEach((c, i) => { const m = metas[i]; if (m && passesMeta(m, f, 'full') && !isDone(S.lib[m.id])) rows.push({ c, m }); });
-  const by = {
-    popular: (a, z) => (z.c.popularity || 0) - (a.c.popularity || 0),
-    rating: (a, z) => (z.c.vote_average || 0) - (a.c.vote_average || 0),
-    newest: (a, z) => String(z.c.first_air_date || '').localeCompare(String(a.c.first_air_date || '')),
-    oldest: (a, z) => String(a.c.first_air_date || '').localeCompare(String(z.c.first_air_date || '')),
-    az: (a, z) => a.m.n.localeCompare(z.m.n)
-  };
-  rows.sort(by[f.sort] || by.popular);
+  if (wantsTC(f) || wantsTS(f)) await resolveTrue();
+  const all = [];
+  for (const kind of kindsOf(f)) {
+    const path = kind === 't' ? '/tv_credits' : '/movie_credits';
+    const lists = [];
+    if (f.actor) lists.push(((await tmdb('/person/' + f.actor.id + path, { language: 'en-US' })).cast) || []);
+    if (f.creator) lists.push(((await tmdb('/person/' + f.creator.id + path, { language: 'en-US' })).crew) || []);
+    if (b.token !== browseToken) return 0;
+    const byId = new Map();
+    for (const c of lists[0]) if (!byId.has(c.id)) byId.set(c.id, c);
+    for (const l of lists.slice(1)) { const ids = new Set(l.map((c) => c.id)); for (const id of [...byId.keys()]) if (!ids.has(id)) byId.delete(id); }
+    const cands = [...byId.values()].map((c) => Object.assign(c, { _k: kind, _h: '' })).filter((c) => inScopeStrict(c, f));
+    all.push(...await evaluate(cands, f, 'full'));
+    if (b.token !== browseToken) return 0;
+  }
+  const rows = all.filter((r) => !itemDone(r.m));
+  rows.sort((x, y) => (f.sort === 'az' ? x.m.n.localeCompare(y.m.n) : byOrder(f.sort)(x.c, y.c)));
   b.items = rows.map((r) => r.m);
-  b.ids = new Set(b.items.map((m) => m.id));
+  b.ids = new Set(b.items.map(itemKey));
   b.total = b.items.length;
   b.done = true;
   if (S.tab === 'all') { $('#grid').innerHTML = b.items.map(cardHTML).join(''); syncCards(); }
@@ -1089,10 +1333,13 @@ function nearEnd() {
 /* ---------- list: chrome ---------- */
 function activeChips(f) {
   const chips = [];
+  if (f.type === 'movies') chips.push(['type', 'Movies only']);
+  else if (f.type === 'both') chips.push(['type', 'Series and movies']);
   if (f.actor) chips.push(['actor', 'With ' + f.actor.name]);
   if (f.creator) chips.push(['creator', 'By ' + f.creator.name]);
-  if (f.genres.length === 2) chips.push(['genres', 'Crime and Mystery']);
-  else if (f.genres[0] === 'mystery') chips.push(['genres', 'Mystery only']);
+  const gl = GENRES.filter((g) => f.genres.includes(g.key)).map((g) => g.label);
+  if (!(gl.length === 1 && f.genres[0] === 'crime')) chips.push(['genres', gl.length === 1 ? gl[0] + ' only' : gl.slice(0, -1).join(', ') + ' and ' + gl[gl.length - 1]]);
+  if (wantsTC(f) && !(f.tcDocs && f.tcDrama)) chips.push(['tcpart', f.tcDocs ? 'True crime: documentaries' : 'True crime: dramas']);
   for (const k of f.focus) chips.push(['focus:' + k, FOCUS.find((x) => x.key === k).label]);
   if (f.decade) chips.push(['decade', f.decade + 's']);
   if (f.country) chips.push(['country', COUNTRIES.find((c) => c.code === f.country).label]);
@@ -1106,7 +1353,8 @@ function activeChips(f) {
 function clearFilter(name) {
   const f = S.filters;
   if (name.indexOf('focus:') === 0) f.focus = f.focus.filter((k) => k !== name.slice(6));
-  else if (name === 'genres') f.genres = ['crime'];
+  else if (name === 'genres') { f.genres = ['crime']; f.tcDocs = true; f.tcDrama = true; }
+  else if (name === 'tcpart') { f.tcDocs = true; f.tcDrama = true; }
   else f[name] = clone(DEFAULT_FILTERS)[name];
   saveFilters();
   refreshList();
@@ -1130,10 +1378,11 @@ function paintUnder() {
         '<button type="button" class="chip" data-person="' + p.id + '" data-name="' + esc(p.name) + '" data-dept="' + esc(p.dept) + '"><span>' + esc(p.name) + '</span><small>' + esc(p.dept === 'Acting' ? 'Actor' : (p.dept || 'Crew')) + '</small></button>').join('') + '</div></div>';
     }
     let line = '';
-    if (m === 'search') line = (S.searchAll ? 'All TV series matching ' : 'Finished crime series matching ') + '“' + S.q.trim() + '”' + (chips.length ? ' · filters paused' : '');
+    const noun = nounFor(S.filters);
+    if (m === 'search') line = (S.searchAll ? 'All ' + noun + ' matching ' : (S.filters.type === 'movies' ? 'Crime movies' : 'Finished crime ' + noun) + ' matching ') + '“' + S.q.trim() + '”' + (chips.length ? ' · filters paused' : '');
     else if (b && b.total != null && !(b.loading && !b.items.length) && !(S.filters.seasons && m === 'discover')) {
       const who = [S.filters.actor && 'with ' + S.filters.actor.name, S.filters.creator && 'by ' + S.filters.creator.name].filter(Boolean).join(', ');
-      line = fmt(b.total) + ' series' + (who ? ' ' + who : '');
+      line = fmt(b.total) + ' ' + (b.total === 1 && S.filters.type === 'movies' ? 'movie' : S.filters.type === 'series' ? 'series' : S.filters.type === 'movies' ? 'movies' : 'titles') + (who ? ' ' + who : '');
     }
     if (line) html += '<p class="result-line">' + esc(line) + '</p>';
   } else {
@@ -1148,28 +1397,29 @@ function paintState() {
   const b = browse;
   if (!b) { el.innerHTML = ''; return; }
   const last = diag.length ? diag[diag.length - 1] : '';
+  const noun = nounFor(S.filters);
   if (b.error) {
-    el.innerHTML = '<div class="state"><strong>Couldn’t load series</strong><p>' + esc(errorText(b.error)) + '</p><button type="button" class="btn ghost" data-act="retry">Try again</button>' + (last ? '<code>' + esc(last) + '</code>' : '') + '</div>';
+    el.innerHTML = '<div class="state"><strong>Couldn’t load ' + noun + '</strong><p>' + esc(errorText(b.error)) + '</p><button type="button" class="btn ghost" data-act="retry">Try again</button>' + (last ? '<code>' + esc(last) + '</code>' : '') + '</div>';
   } else if (b.loading && !b.items.length) {
     el.innerHTML = '<div class="grid">' + skeletonHTML(9) + '</div>';
   } else if (b.loading) {
     el.innerHTML = '<div class="state"><p>Loading more…</p></div>';
   } else if (!b.items.length && b.done) {
     let msg, extra = '';
-    if (b.mode === 'search' && !S.searchAll) { msg = 'No finished crime or mystery series match “' + esc(S.q.trim()) + '”.'; extra = '<button type="button" class="btn ghost" data-act="search-all">Search all TV series</button>'; }
-    else if (b.mode === 'search') msg = 'TMDB has no series matching “' + esc(S.q.trim()) + '”.';
-    else if (b.mode === 'person') msg = 'No finished crime series found for this person with the current filters.';
-    else if (activeChips(S.filters).length) { msg = 'No series match these filters.'; extra = '<button type="button" class="btn ghost" data-act="reset-filters">Clear filters</button>'; }
-    else { msg = 'TMDB returned no series for the standard search.'; extra = last ? '<code>' + esc(last) + '</code>' : ''; }
+    if (b.mode === 'search' && !S.searchAll) { msg = 'No crime or mystery ' + noun + ' match “' + esc(S.q.trim()) + '”.'; extra = '<button type="button" class="btn ghost" data-act="search-all">Search all ' + noun + '</button>'; }
+    else if (b.mode === 'search') msg = 'TMDB has no ' + noun + ' matching “' + esc(S.q.trim()) + '”.';
+    else if (b.mode === 'person') msg = 'No crime ' + noun + ' found for this person with the current filters.';
+    else if (activeChips(S.filters).length) { msg = 'No ' + noun + ' match these filters.'; extra = '<button type="button" class="btn ghost" data-act="reset-filters">Clear filters</button>'; }
+    else { msg = 'TMDB returned nothing for the standard search.'; extra = last ? '<code>' + esc(last) + '</code>' : ''; }
     el.innerHTML = '<div class="state"><strong>Nothing here</strong><p>' + msg + '</p>' + extra + '</div>';
   } else if (b.stalled) {
-    el.innerHTML = '<div class="state"><p>Checked ' + fmt(b.scanned) + ' series so far.</p><button type="button" class="btn ghost" data-act="more">Keep looking</button></div>';
+    el.innerHTML = '<div class="state"><p>Checked ' + fmt(b.scanned) + ' titles so far.</p><button type="button" class="btn ghost" data-act="more">Keep looking</button></div>';
   } else if (!b.done) {
     el.innerHTML = '<div class="state"><button type="button" class="btn ghost" data-act="more">Load more</button></div>';
   } else if (b.mode === 'search' && !S.searchAll) {
-    el.innerHTML = '<div class="state"><p>Not what you were looking for?</p><button type="button" class="btn ghost" data-act="search-all">Search all TV series</button></div>';
+    el.innerHTML = '<div class="state"><p>Not what you were looking for?</p><button type="button" class="btn ghost" data-act="search-all">Search all ' + noun + '</button></div>';
   } else if (b.mode === 'search') {
-    el.innerHTML = '<div class="state"><button type="button" class="btn ghost" data-act="search-scope">Back to finished crime series</button></div>';
+    el.innerHTML = '<div class="state"><button type="button" class="btn ghost" data-act="search-scope">Back to crime ' + noun + '</button></div>';
   } else {
     el.innerHTML = '';
   }
@@ -1208,7 +1458,9 @@ function paintChrome() {
   $('#filter-btn').hidden = actors;
   $('#q-icon-search').toggleAttribute('hidden', actors);
   $('#q-icon-add').toggleAttribute('hidden', !actors);
-  const label = actors ? 'Add an actor by name' : 'Search series or actor';
+  const f = S.filters;
+  const label = actors ? 'Add an actor by name' : f.type === 'movies' ? 'Search movie or actor' : f.type === 'both' ? 'Search a title or actor' : 'Search series or actor';
+  $('#subtitle').textContent = f.type === 'movies' ? 'Crime movies in English, from 1990 on' : f.type === 'both' ? 'Finished crime series and movies in English, from 1990 on' : 'Finished crime series in English, from 1990 on';
   $('#q').placeholder = label;
   $('#q').setAttribute('aria-label', label);
   $('#actors').hidden = !actors;
@@ -1625,11 +1877,15 @@ const tpf = (() => {
   return { type: v.type === 't' || v.type === 'm' ? v.type : 'all', tags: uniqTags(v.tags) };
 })();
 const saveTpf = () => store.set(LS.tpf, tpf);
-function tpShown() {
+/* seen titles leave the list; a button under it brings them back for a look */
+let tpShowSeen = false;
+const tpSeen = (it) => pickState(it, refOf(it)).done;
+function tpMatching() {
   const tags = themeTags();
   tpf.tags = tpf.tags.filter((t) => tags.some((x) => az(x, t) === 0));
   return S.theme.filter((it) => (tpf.type === 'all' || it.k === tpf.type) && tpf.tags.every((t) => it.tags.some((x) => az(x, t) === 0)));
 }
+const tpShown = () => tpMatching().filter((it) => tpShowSeen || !tpSeen(it));
 function tpRowHTML(it) {
   const ref = refOf(it);
   const st = pickState(it, ref);
@@ -1650,9 +1906,11 @@ function tpCountHTML(shown) {
     (on ? '<button type="button" class="text-btn" data-tpclear>Clear filters</button>' : '');
 }
 function tpListHTML(shown) {
+  const seen = tpMatching().filter(tpSeen).length;
+  const toggle = seen ? '<button type="button" class="text-btn tp-seen" data-tpseen>' + (tpShowSeen ? 'Hide seen titles' : 'Show ' + plural(seen, 'seen title')) + '</button>' : '';
   if (!S.theme.length) return '<p class="note">Nothing here yet. Use Add a title to start the list.</p>';
-  if (!shown.length) return '<p class="note">No titles match these filters.</p>';
-  return '<div class="picks">' + shown.map(tpRowHTML).join('') + '</div>';
+  if (!shown.length) return '<p class="note">' + (seen && !tpShowSeen ? 'You have seen everything that matches these filters.' : 'No titles match these filters.') + '</p>' + toggle;
+  return '<div class="picks">' + shown.map(tpRowHTML).join('') + '</div>' + toggle;
 }
 function tpSectionHTML() {
   const shown = tpShown();
@@ -1681,11 +1939,13 @@ function paintTpResults() {
   if (l) l.innerHTML = tpListHTML(shown);
   resolveShown(shown);
 }
+let tpRepaintTimer = 0;
 function resolveShown(shown) {
   for (const it of shown) {
     if (refOf(it)) continue;
     resolvePick(it).then((ref) => {
       if (!ref || current !== 'profile' || profileTab !== 'picks') return;
+      if (tpSeen(it) && !tpShowSeen) { clearTimeout(tpRepaintTimer); tpRepaintTimer = setTimeout(paintTpResults, 120); return; }
       const row = document.querySelector('#view-profile .tp-row[data-pick="' + CSS.escape(it.key) + '"]');
       if (row) row.outerHTML = tpRowHTML(it);
     }).catch(() => {});
@@ -1701,7 +1961,7 @@ function paintProfile() {
   let html = '<div class="show-top"><a class="icon-btn" href="#/" data-back aria-label="Back to the list">' + ICON.back + '</a></div>' +
     '<div class="phero"><span class="me big photo">' + ICON.me + '</span><div class="phero-info"><h1>My profile</h1><div class="facts"><div>' + c.watching + ' watching · ' + c.interested + ' interested · ' + c.completed + ' completed</div></div></div></div>' +
     '<div class="pchips"><button type="button" class="chip" data-ptab="watching" aria-pressed="' + (profileTab === 'watching') + '">Watching ' + items.length + '</button>' +
-    '<button type="button" class="chip" data-ptab="picks" aria-pressed="' + (profileTab === 'picks') + '">Theme picks ' + S.theme.length + '</button></div>';
+    '<button type="button" class="chip" data-ptab="picks" aria-pressed="' + (profileTab === 'picks') + '">Theme picks ' + S.theme.filter((it) => !tpSeen(it)).length + '</button></div>';
   if (profileTab === 'watching') {
     html += '<section class="sec"><h2 class="h-sec">Watching now</h2>' +
       (items.length
@@ -2069,22 +2329,33 @@ function paintFilters() {
   const f = draft;
   const focus = FOCUS.filter((g) => S.focusMap && (S.focusMap[g.key] || []).length);
   const nets = NETWORKS.filter((n) => networkOk(n.id));
+  const only = f.type === 'both' ? '<span class="note">Series only</span>' : '';
   const html = '<div class="sheet-in"><div class="sheet-head"><a class="icon-btn" href="#/" data-back aria-label="Close filters">' + ICON.close + '</a><h1>Filters</h1><button type="button" class="text-btn" data-act="filters-reset">Clear</button></div>' +
     '<div class="sheet-body">' +
+    '<div class="group"><h2>Show</h2><div class="chips even3">' + TYPES.map((t) => chip('type', t[0], t[1], f.type === t[0])).join('') + '</div><p class="note">Movies follow the same rules as series: in English, from 1990 on, and the ones you mark as seen leave this list.</p></div>' +
     '<div class="group"><h2>Sort by</h2><div class="chips">' + SORTS.map((s) => chip('sort', s.key, s.label, f.sort === s.key)).join('') + '</div></div>' +
     personGroup('actor', 'Actor', 'Type a name') +
     personGroup('creator', 'Creator or crew', 'Type a name') +
-    '<div class="group"><h2>Genre</h2><div class="chips">' + GENRES.map((g) => chip('genres', g.key, g.label, f.genres.includes(g.key))).join('') + '</div><p class="note">Mystery adds whodunits and supernatural mysteries that TMDB does not list under Crime.</p></div>' +
+    '<div class="group"><h2>Genre</h2><div class="chips">' + GENRES.map((g) => chip('genres', g.key, g.label, f.genres.includes(g.key))).join('') + '</div>' +
+      (wantsTC(f) ? '<div class="subbox"><b>True crime brings</b>' +
+        '<label class="switch"><input type="checkbox" data-toggle="tcDocs"' + (f.tcDocs ? ' checked' : '') + '><span>Documentaries and docuseries<small>Making a Murderer, The Keepers, The Imposter</small></span></label>' +
+        '<label class="switch"><input type="checkbox" data-toggle="tcDrama"' + (f.tcDrama ? ' checked' : '') + '><span>Dramas based on real cases<small>Spotlight, Zodiac, Unbelievable</small></span></label>' +
+        '<p class="note">Horror and fantasy “based on true events” are left out.</p></div>' : '') +
+      (wantsTS(f) ? '<div class="subbox"><b>True story</b><p class="note">Dramas based on real events about anything, not only crime, like Pride or Hidden Figures. Horror and fantasy are left out here too.</p></div>' : '') +
+      '<p class="note">You can pick more than one. Mystery adds whodunits that TMDB does not list under Crime. True crime and True story come from TMDB tags, so a few titles may be missing.</p></div>' +
     (focus.length ? '<div class="group"><h2>Focus</h2><div class="chips">' + focus.map((g) => chip('focus', g.key, g.label, f.focus.includes(g.key))).join('') + '</div><p class="note">Based on TMDB keywords, so some series are missing from these.</p></div>' : '') +
-    '<div class="group"><h2>First aired</h2><div class="chips even">' + DECADES.map((d) => chip('decade', d, d + 's', f.decade === d)).join('') + '</div></div>' +
+    '<div class="group"><h2>' + (f.type === 'series' ? 'First aired' : 'Decade') + '</h2><div class="chips even">' + DECADES.map((d) => chip('decade', d, d + 's', f.decade === d)).join('') + '</div></div>' +
     '<div class="group"><h2>Country</h2><div class="chips">' + COUNTRIES.map((c) => chip('country', c.code, c.label, f.country === c.code)).join('') + '</div></div>' +
-    '<div class="group"><h2>Network or streaming</h2><div class="chips">' + nets.map((n) => chip('network', n.id, n.label, f.network === n.id)).join('') + '</div></div>' +
-    '<div class="group"><h2>Number of seasons</h2><div class="chips even">' + SEASONS.map((s) => chip('seasons', s.key, s.label, f.seasons === s.key)).join('') + '</div></div>' +
+    (f.type !== 'movies'
+      ? '<div class="group"><div class="group-h"><h2>Network or streaming</h2>' + only + '</div><div class="chips">' + nets.map((n) => chip('network', n.id, n.label, f.network === n.id)).join('') + '</div></div>' +
+        '<div class="group"><div class="group-h"><h2>Number of seasons</h2>' + only + '</div><div class="chips even">' + SEASONS.map((s) => chip('seasons', s.key, s.label, f.seasons === s.key)).join('') + '</div></div>'
+      : '<p class="note subbox">Network, Number of seasons and Canceled series are hidden while only Movies is on.</p>') +
     '<div class="group"><h2>TMDB score</h2><div class="chips">' + RATINGS.map((r) => chip('rating', r.v == null ? '' : r.v, r.label, f.rating === r.v)).join('') + '</div></div>' +
     '<div class="group"><h2>Include</h2>' +
-      '<label class="switch"><input type="checkbox" id="f-canceled" data-toggle="canceled"' + (f.canceled ? ' checked' : '') + '>Canceled series</label>' +
-      '<label class="switch"><input type="checkbox" id="f-unscripted" data-toggle="unscripted"' + (f.unscripted ? ' checked' : '') + '>Documentaries and reality</label></div>' +
-    '</div><div class="sheet-foot"><button type="button" class="btn block" data-act="filters-apply">Show series</button></div></div>';
+      (f.type !== 'movies' ? '<label class="switch"><input type="checkbox" id="f-canceled" data-toggle="canceled"' + (f.canceled ? ' checked' : '') + '>Canceled series</label>' : '') +
+      '<label class="switch"><input type="checkbox" id="f-unscripted" data-toggle="unscripted"' + (f.unscripted ? ' checked' : '') + '>Documentaries and reality</label>' +
+      (wantsTC(f) ? '<p class="note">True crime brings its documentaries even with this off.</p>' : '') + '</div>' +
+    '</div><div class="sheet-foot"><button type="button" class="btn block" data-act="filters-apply">Show ' + nounFor(f) + '</button></div></div>';
   const sheet = $('#sheet-filters');
   const top = sheet.scrollTop;
   sheet.innerHTML = html;
@@ -2099,9 +2370,11 @@ function openFilters() {
 function draftSet(group, raw) {
   const f = draft;
   if (group === 'sort') f.sort = raw;
+  else if (group === 'type') f.type = raw;
   else if (group === 'genres') {
     f.genres = f.genres.includes(raw) ? f.genres.filter((g) => g !== raw) : f.genres.concat(raw);
-    if (!f.genres.length) f.genres = GENRES.map((g) => g.key).filter((g) => g !== raw);
+    if (!f.genres.length) f.genres = [raw];
+    if (f.genres.includes('truecrime') || f.genres.includes('truestory')) resolveTrue().catch(() => null);
   }
   else if (group === 'focus') f.focus = f.focus.includes(raw) ? f.focus.filter((k) => k !== raw) : f.focus.concat(raw);
   else if (group === 'decade' || group === 'network') { const v = Number(raw); f[group] = f[group] === v ? null : v; }
@@ -2317,6 +2590,7 @@ document.addEventListener('click', (ev) => {
     saveTpf(); paintTpResults(); return;
   }
   if (t.closest('[data-tpclear]')) { tpf.type = 'all'; tpf.tags = []; saveTpf(); paintTpResults(); return; }
+  if (t.closest('[data-tpseen]')) { tpShowSeen = !tpShowSeen; paintTpResults(); return; }
   if (tpPanel && t.closest('#panel')) {
     if ((el = t.closest('[data-tpt]'))) { tpToggleTag(el.dataset.tpt); return; }
     if ((el = t.closest('[data-tpsel]'))) {
@@ -2424,7 +2698,7 @@ document.addEventListener('click', (ev) => {
     }
     else if (act === 'export') exportBackup();
     else if (act === 'install' && installEvent) { installEvent.prompt(); installEvent = null; paintSettings(); }
-    else if (act === 'clear-cache') { metaMem.clear(); fullMem.clear(); personMem.clear(); filmMem.clear(); store.del(LS.credits); store.del(LS.meta); store.del(LS.kw); store.del(LS.nets); S.focusMap = null; S.badNets = null; browse = null; pendingReload = true; toast('Saved series data cleared'); }
+    else if (act === 'clear-cache') { metaMem.clear(); mmetaMem.clear(); fullMem.clear(); personMem.clear(); filmMem.clear(); store.del(LS.credits); store.del(LS.meta); store.del(LS.mmeta); store.del(LS.kw); store.del(LS.kw2); store.del(LS.nets); S.focusMap = null; S.trueMap = null; S.badNets = null; browse = null; pendingReload = true; toast('Saved series data cleared'); }
     else if (act === 'key-save') {
       const input = $('#key-change'), err = $('#key-err');
       const key = input.value.trim();
@@ -2451,7 +2725,10 @@ document.addEventListener('change', (ev) => {
   if (t instanceof HTMLTextAreaElement && t.id === 'tp-note') { flushTpNote(); return; }
   if (!(t instanceof HTMLInputElement)) return;
   if (t.dataset.season && showing && showing.name) setSeen(showing, [Number(t.dataset.season)], t.checked);
-  else if (t.dataset.toggle && draft) draft[t.dataset.toggle] = t.checked;
+  else if (t.dataset.toggle && draft) {
+    draft[t.dataset.toggle] = t.checked;
+    if ((t.dataset.toggle === 'tcDocs' || t.dataset.toggle === 'tcDrama') && !draft.tcDocs && !draft.tcDrama) { draft[t.dataset.toggle === 'tcDocs' ? 'tcDrama' : 'tcDocs'] = true; paintFilters(); }
+  }
   else if (t.id === 'import-file' && t.files && t.files[0]) { importBackup(t.files[0]); t.value = ''; }
 });
 document.addEventListener('input', (ev) => {
