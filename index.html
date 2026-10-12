@@ -1926,12 +1926,11 @@ function pickState(it, ref) {
 }
 const inTheme = (k, id) => S.theme.some((it) => { const r = refOf(it); return it.k === k && r && r.id === id; });
 
-/* filters: one type plus any number of tags; a title has to carry every tag that is on */
-const tpf = (() => {
-  const v = store.get(LS.tpf, null) || {};
-  return { type: v.type === 't' || v.type === 'm' ? v.type : 'all', tags: uniqTags(v.tags) };
-})();
-const saveTpf = () => store.set(LS.tpf, tpf);
+/* filters: one type plus any number of tags; a title has to carry every tag that is on.
+   They start clean every time Theme picks is opened, so they are not kept between visits. */
+const tpf = { type: 'all', tags: [] };
+store.del(LS.tpf);
+function tpfReset() { tpf.type = 'all'; tpf.tags = []; tpShowSeen = false; }
 /* seen titles leave the list; a button under it brings them back for a look */
 let tpShowSeen = false;
 const tpSeen = (it) => pickState(it, refOf(it)).done;
@@ -2007,7 +2006,9 @@ function resolveShown(shown) {
   }
 }
 
-let profileTab = store.get(LS.ptab, 'watching') === 'picks' ? 'picks' : 'watching';
+/* the profile always opens on Watching; Back from a title keeps the tab you were on */
+let profileTab = 'watching';
+store.del(LS.ptab);
 function paintProfile() {
   const c = libCounts();
   const items = Object.keys(S.lib).map((id) => S.lib[id]).filter((e) => statusOf(e) === 'watching').sort((a, b) => b.u - a.u);
@@ -2558,7 +2559,7 @@ function route(back) {
   if (m && back && current === 'show' && showing && showing.id === Number(m[1]) && showing.name) { paintTrack(showing); return; }
   if (m) { showView('show'); openShow(Number(m[1])); return; }
   const mp = h.match(/^#\/person\/(\d+)$/);
-  if (mp) { showView('person'); openPerson(Number(mp[1]), back); return; }
+  if (mp) { if (!back) delete personFilter[Number(mp[1])]; showView('person'); openPerson(Number(mp[1]), back); return; }
   const mf = h.match(/^#\/film\/(\d+)$/);
   if (mf) { showView('film'); openFilm(Number(mf[1])); return; }
   if (h === '#/profile') {
@@ -2627,6 +2628,8 @@ document.addEventListener('click', (ev) => {
   const t = ev.target instanceof Element ? ev.target : null;
   if (!t) return;
   let el;
+  /* Me in the bottom bar opens the profile fresh: Watching tab, Theme picks filters off */
+  if (t.closest('#dock a[href="#/profile"]') && current !== 'profile') { profileTab = 'watching'; tpfReset(); }
   if (personPick.on && current === 'person' && (el = t.closest('#person-grid .card'))) {
     ev.preventDefault();
     const key = el.dataset.key;
@@ -2642,15 +2645,15 @@ document.addEventListener('click', (ev) => {
     return;
   }
   if ((el = t.closest('[data-back]'))) { ev.preventDefault(); goBack(); return; }
-  if ((el = t.closest('[data-ptab]'))) { profileTab = el.dataset.ptab; store.set(LS.ptab, profileTab); paintProfile(); return; }
+  if ((el = t.closest('[data-ptab]'))) { if (el.dataset.ptab === 'picks' && profileTab !== 'picks') tpfReset(); profileTab = el.dataset.ptab; paintProfile(); return; }
   if ((el = t.closest('.tp-link[data-wait]'))) { ev.preventDefault(); toast('Still looking this title up on TMDB. Try again in a moment.'); return; }
-  if ((el = t.closest('[data-tptype]'))) { tpf.type = el.dataset.tptype; saveTpf(); paintTpResults(); return; }
+  if ((el = t.closest('[data-tptype]'))) { tpf.type = el.dataset.tptype; paintTpResults(); return; }
   if ((el = t.closest('[data-tptag]'))) {
     const name = el.dataset.tptag;
     tpf.tags = tpf.tags.some((x) => az(x, name) === 0) ? tpf.tags.filter((x) => az(x, name) !== 0) : uniqTags(tpf.tags.concat(name));
-    saveTpf(); paintTpResults(); return;
+    paintTpResults(); return;
   }
-  if (t.closest('[data-tpclear]')) { tpf.type = 'all'; tpf.tags = []; saveTpf(); paintTpResults(); return; }
+  if (t.closest('[data-tpclear]')) { tpf.type = 'all'; tpf.tags = []; paintTpResults(); return; }
   if (t.closest('[data-tpseen]')) { tpShowSeen = !tpShowSeen; paintTpResults(); return; }
   if (tpPanel && t.closest('#panel')) {
     if ((el = t.closest('[data-tpt]'))) { tpToggleTag(el.dataset.tpt); return; }
@@ -2666,7 +2669,11 @@ document.addEventListener('click', (ev) => {
     if (t.closest('[data-act="tp-remove"]')) { tpRemoveTitle(); return; }
   }
   if ((el = t.closest('[data-tab]'))) {
-    if ((el.dataset.tab === 'actors') !== (S.tab === 'actors')) { clearTimeout(qTimer); S.q = ''; $('#q').value = ''; S.searchAll = false; actorSug.list = null; actorSug.token++; }
+    /* going to another screen from the bottom bar starts it clean: no filters, no search (the sort order stays) */
+    if (current !== 'list' || el.dataset.tab !== S.tab) {
+      clearTimeout(qTimer); S.q = ''; $('#q').value = ''; S.searchAll = false; actorSug.list = null; actorSug.token++;
+      S.filters = cleanFilters({ sort: S.filters.sort });
+    }
     S.tab = el.dataset.tab;
     if (current !== 'list') { pendingReload = true; location.hash = '#/'; return; }
     window.scrollTo(0, 0);
