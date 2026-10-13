@@ -467,7 +467,7 @@ body.has-dock .toast { bottom: calc(var(--dock-h) + 30px + env(safe-area-inset-b
 /* ---------- constants ---------- */
 const API = 'https://api.themoviedb.org/3';
 const IMG = 'https://image.tmdb.org/t/p/';
-const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1', people: 'cc.people', films: 'cc.films', credits: 'cc.credits', picks: 'cc.picks.v1', ptab: 'cc.ptab', theme: 'cc.theme.v1', tpf: 'cc.tpf', kw2: 'cc.kw2.v1', mmeta: 'cc.mmeta.v1' };
+const LS = { key: 'cc.key', lib: 'cc.lib', meta: 'cc.meta', filters: 'cc.filters', kw: 'cc.kw.v1', nets: 'cc.nets.v1', people: 'cc.people', films: 'cc.films', credits: 'cc.credits', picks: 'cc.picks.v1', ptab: 'cc.ptab', theme: 'cc.theme.v1', themeAdds: 'cc.theme.adds', tpf: 'cc.tpf', kw2: 'cc.kw2.v1', mmeta: 'cc.mmeta.v1' };
 const META_TTL = 60 * 24 * 3600 * 1000;
 const FIRST_YEAR = 1990;
 
@@ -1879,7 +1879,49 @@ function cleanTheme(raw) {
   }
   return out;
 }
+/* titles sent later. Each batch is merged once into the list already saved on the phone: new titles go on top,
+   and a title that is already there only gains the new tags and the extra line, so her own edits stay. */
+const THEME_ADDS = [
+  { v: 1, items: [
+    { k: 'm', n: "Instant Family", y: 2018, heat: 'None', heatNote: '', tags: ['Established Relationship', 'Found Family'], text: "A couple fosters three siblings, including a guarded teenage girl, and they slowly become a real family. It's funny and a real tearjerker." },
+    { k: 't', n: "High Potential", y: 2024, heat: 'Low', heatNote: '', tags: ['Competent Woman', 'Found Family', 'Love Triangle', 'Protective Team', 'Slow Burn', 'The Ex Comes Back'], text: "Still airing. A single mom of three with an exceptional mind cracks an unsolvable case by rearranging evidence during her shift as a police department cleaner, and the LAPD brings her on as a consultant paired with a by-the-book detective. Like Brenda, she's the outsider the squad has to get used to, and reviewers point out how much the show leans into found family and the characters looking out for each other. Romance is a slow burn with her partner, but season 2 brought back his ex, which complicates things while Morgan is clearly developing feelings for him, so a triangle is forming. It's light and funny." },
+    { k: 't', n: "Cold Case", y: 2003, heat: 'Low', heatNote: '', tags: ['Competent Woman', 'Protective Team'], text: "Lilly Rush starts as the only woman on a Philadelphia homicide squad that reopens unsolved cases, and each episode flashes back to the year of the crime with music from that era. Her squad, especially her partner and their gruff boss, is quietly protective of her. Her own love life is rocky but secondary." },
+    { k: 't', n: "Madam Secretary", y: 2014, tags: ['Found Family', 'Protective Team'], also: "Her State Department staff go from wary to fiercely loyal and become a found family around her." },
+    { k: 't', n: "Leverage", y: 2008, heat: 'Low', heatNote: '', tags: ['Found Family', 'Protective Team', 'Slow Burn'], text: "A crew of thieves and con artists pulls a Robin Hood-style con on someone rich and corrupt each episode. Found family is the whole point of the show, and the team is especially protective of Parker, their socially awkward thief. Her slow-burn romance with the team's hacker is one of the sweetest on TV." },
+    { k: 'm', n: "About Time", y: 2013, heat: 'Low to medium', heatNote: '', tags: ['Devoted Partner', 'Rom-Com'], text: "A young man learns that the men in his family can travel back in time and uses it to find love with Mary. The film then follows their marriage and family life. He's devoted, they're affectionate, and there's one quick hiccup caused by his time travel." },
+    { k: 'm', n: "How Stella Got Her Groove Back", y: 1998, heat: 'Medium to high', heatNote: '', tags: ['Competent Woman', 'Devoted Partner', 'Fritz & Brenda'], text: "A 40-year-old workaholic stockbroker vacations in Jamaica and falls for a 20-year-old local. He's devoted, follows her home, and is never threatened by her career. Her doubts about the age gap cause a brief split, and a friend's illness is a sad subplot." },
+    { k: 'm', n: "The Holiday", y: 2006, heat: 'Low to medium', heatNote: '', tags: ['Rom-Com', 'Starting Over'], text: "Two heartbroken women swap houses over Christmas, one in Los Angeles and one in the English countryside. Both men are kind and open: a widowed single dad, and a film composer who helps her get over a manipulative ex." }
+  ] }
+];
+function mergeThemeAdds(list, from) {
+  let changed = false;
+  for (const batch of THEME_ADDS) {
+    if (batch.v <= from) continue;
+    const fresh = [];
+    for (const add of batch.items) {
+      const same = list.find((x) => x.k === add.k && normTitle(x.n) === normTitle(add.n) && (!x.y || !add.y || Math.abs(x.y - add.y) <= 1));
+      if (same) {
+        same.tags = uniqTags(same.tags.concat(add.tags || []));
+        if (add.also && same.text.indexOf(add.also) === -1) same.text = (same.text ? same.text + ' ' : '') + add.also;
+      } else {
+        const c = cleanTheme([Object.assign({}, add, { text: add.text || add.also || '' })]);
+        if (c && c[0] && !list.some((x) => x.key === c[0].key)) fresh.push(c[0]);
+      }
+      changed = true;
+    }
+    list.unshift(...fresh);
+  }
+  return changed;
+}
 S.theme = cleanTheme(store.get(LS.theme, null)) || cleanTheme(THEME_SEED);
+{
+  const last = THEME_ADDS[THEME_ADDS.length - 1].v;
+  const done = Number(store.get(LS.themeAdds, 0)) || 0;
+  if (done < last) {
+    if (mergeThemeAdds(S.theme, done)) store.set(LS.theme, S.theme);
+    store.set(LS.themeAdds, last);
+  }
+}
 const saveTheme = () => store.set(LS.theme, S.theme);
 const themeItem = (key) => S.theme.find((x) => x.key === key) || null;
 /* every tag in use, case-insensitively unique, A to Z */
