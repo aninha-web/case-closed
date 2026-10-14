@@ -1903,6 +1903,13 @@ const THEME_ADDS = [
     { k: 't', n: "High Potential", y: 2024, update: true, heat: '' },
     { k: 't', n: "Cold Case", y: 2003, update: true, heat: '' },
     { k: 't', n: "Leverage", y: 2008, update: true, heat: '' }
+  ] },
+  { v: 3, items: [
+    { k: 'm', n: "Women Talking", y: 2022, tags: ['Abuse Off Screen', 'Survivor Story'], text: "After learning they were drugged and assaulted for years, the women of a remote religious colony meet to decide whether to stay, fight, or leave. The assaults happen off screen, and the film is entirely about their voices. It's set around 2010, even though the colony looks old-fashioned." },
+    { k: 'm', n: "Never Rarely Sometimes Always", y: 2020, tags: ['Abuse Off Screen', 'Survivor Story'], text: "A quiet Pennsylvania 17-year-old travels to New York with her cousin to end a pregnancy. Her abuse is only hinted at, and the clinic counselor scene is one of the most gently handled survivor moments on film. The lead is a teenager, but it's nothing like a teen movie." },
+    { k: 'm', n: "North Country", y: 2005, tags: ['Abuse Shown On Screen', 'Survivor Story', 'True Story'], text: "A single mom in Minnesota who takes a mining job sues over the brutal harassment women face there, in a case based on a real landmark lawsuit. It's set in the late '80s, and a flashback reveals an assault from her past." },
+    { k: 't', n: "Unbelievable", y: 2019, tags: ['Competent Woman', 'Devoted Partner', 'Survivor Story', 'True Story'], text: "8 episodes. Based on a true case, two female detectives from different towns team up to hunt a serial rapist. Both go home to quietly supportive husbands who pick up the slack while they work the case. It's close to Mindhunter in tone, but the subject is heavy and the romance stays in the background." },
+    { k: 't', n: "Big Little Lies", y: 2017, tags: ['Abuse Shown On Screen', 'Hurt/Comfort', 'Safe Love After Abuse', 'Supporting Couple', 'Survivor Story'], text: "Season 2: Jane, a rape survivor raising the son conceived in the attack, starts dating Corey, a gentle, awkward coworker at the aquarium. He's patient when she panics at being touched, and their storyline is the softest part of the show. The rest of the show is heavy, including graphic domestic violence in season 1." }
   ] }
 ];
 function mergeThemeAdds(list, from) {
@@ -1983,18 +1990,23 @@ const inTheme = (k, id) => S.theme.some((it) => { const r = refOf(it); return it
 
 /* filters: one type plus any number of tags; a title has to carry every tag that is on.
    They start clean every time Theme picks is opened, so they are not kept between visits. */
-const tpf = { type: 'all', tags: [] };
+const tpf = { type: 'all', tags: [], q: '' };
 store.del(LS.tpf);
-function tpfReset() { tpf.type = 'all'; tpf.tags = []; tpShowSeen = false; }
+function tpfReset() { tpf.type = 'all'; tpf.tags = []; tpf.q = ''; tpShowSeen = false; }
+/* the search box only looks through Theme picks titles, never TMDB; case, accents and punctuation don't matter, word breaks do */
+const findNorm = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/['’]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const tpQuery = () => findNorm(tpf.q);
 /* seen titles leave the list; a button under it brings them back for a look */
 let tpShowSeen = false;
 const tpSeen = (it) => pickState(it, refOf(it)).done;
 function tpMatching() {
   const tags = themeTags();
   tpf.tags = tpf.tags.filter((t) => tags.some((x) => az(x, t) === 0));
-  return S.theme.filter((it) => (tpf.type === 'all' || it.k === tpf.type) && tpf.tags.every((t) => it.tags.some((x) => az(x, t) === 0)));
+  const q = tpQuery();
+  return S.theme.filter((it) => (tpf.type === 'all' || it.k === tpf.type) && tpf.tags.every((t) => it.tags.some((x) => az(x, t) === 0)) && (!q || findNorm(it.n).includes(q)));
 }
-const tpShown = () => tpMatching().filter((it) => tpShowSeen || !tpSeen(it));
+/* seen titles stay hidden, except when you search for them */
+const tpShown = () => tpMatching().filter((it) => tpShowSeen || tpQuery() || !tpSeen(it));
 function tpRowHTML(it) {
   const ref = refOf(it);
   const st = pickState(it, ref);
@@ -2011,13 +2023,16 @@ function tpRowHTML(it) {
 }
 function tpCountHTML(shown) {
   const on = tpf.type !== 'all' || tpf.tags.length;
-  return '<span>' + plural(shown.length, 'title') + (tpf.tags.length ? ' · ' + esc(tpf.tags.join(' + ')) : '') + '</span>' +
-    (on ? '<button type="button" class="text-btn" data-tpclear>Clear filters</button>' : '');
+  const q = tpf.q.trim();
+  return '<span>' + plural(shown.length, 'title') + (q && tpQuery() ? ' matching “' + esc(q) + '”' : '') + (tpf.tags.length ? ' · ' + esc(tpf.tags.join(' + ')) : '') + '</span>' +
+    (on || q ? '<button type="button" class="text-btn" data-tpclear>' + (on && q ? 'Clear all' : on ? 'Clear filters' : 'Clear search') + '</button>' : '');
 }
 function tpListHTML(shown) {
-  const seen = tpMatching().filter(tpSeen).length;
+  const searching = !!tpQuery();
+  const seen = searching ? 0 : tpMatching().filter(tpSeen).length;
   const toggle = seen ? '<button type="button" class="text-btn tp-seen" data-tpseen>' + (tpShowSeen ? 'Hide seen titles' : 'Show ' + plural(seen, 'seen title')) + '</button>' : '';
   if (!S.theme.length) return '<p class="note">Nothing here yet. Use Add a title to start the list.</p>';
+  if (!shown.length && searching) return '<p class="note">No theme picks match “' + esc(tpf.q.trim()) + '”' + (tpf.type !== 'all' || tpf.tags.length ? ' with these filters on.' : '.') + '</p>';
   if (!shown.length) return '<p class="note">' + (seen && !tpShowSeen ? 'You have seen everything that matches these filters.' : 'No titles match these filters.') + '</p>' + toggle;
   return '<div class="picks">' + shown.map(tpRowHTML).join('') + '</div>' + toggle;
 }
@@ -2026,6 +2041,8 @@ function tpSectionHTML() {
   const tags = themeTags();
   const seg = (v, label) => '<button type="button" data-tptype="' + v + '" aria-pressed="' + (tpf.type === v) + '">' + label + '</button>';
   return '<div class="sec"><div class="tp-head"><h2 class="h-sec">Theme picks</h2><a class="tp-add" href="#/profile/add" aria-label="Add a title">' + ICON.plus + '</a></div>' +
+    '<label class="search tp-search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>' +
+    '<input id="tp-find" type="search" placeholder="Search your theme picks" aria-label="Search your theme picks" autocomplete="off" enterkeyhint="search" value="' + esc(tpf.q) + '"></label>' +
     '<div class="seg" role="group" aria-label="Type">' + seg('all', 'All') + seg('t', 'Shows') + seg('m', 'Movies') + '</div>' +
     (tags.length ? '<div class="tp-tags" role="group" aria-label="Tags">' + tags.map((t) => {
       const on = tpf.tags.some((x) => az(x, t) === 0);
@@ -2708,7 +2725,7 @@ document.addEventListener('click', (ev) => {
     tpf.tags = tpf.tags.some((x) => az(x, name) === 0) ? tpf.tags.filter((x) => az(x, name) !== 0) : uniqTags(tpf.tags.concat(name));
     paintTpResults(); return;
   }
-  if (t.closest('[data-tpclear]')) { tpf.type = 'all'; tpf.tags = []; paintTpResults(); return; }
+  if (t.closest('[data-tpclear]')) { tpf.type = 'all'; tpf.tags = []; tpf.q = ''; const f = $('#tp-find'); if (f) f.value = ''; paintTpResults(); return; }
   if (t.closest('[data-tpseen]')) { tpShowSeen = !tpShowSeen; paintTpResults(); return; }
   if (tpPanel && t.closest('#panel')) {
     if ((el = t.closest('[data-tpt]'))) { tpToggleTag(el.dataset.tpt); return; }
@@ -2842,7 +2859,7 @@ document.addEventListener('keydown', (ev) => {
   const t = ev.target;
   if (ev.key !== 'Enter' || !(t instanceof HTMLInputElement)) return;
   if (t.id === 'tp-newtag') { ev.preventDefault(); tpAddTag(); }
-  else if (t.id === 'tp-q') t.blur();
+  else if (t.id === 'tp-q' || t.id === 'tp-find') t.blur();
 });
 document.addEventListener('change', (ev) => {
   const t = ev.target;
@@ -2861,6 +2878,7 @@ document.addEventListener('input', (ev) => {
   const t = ev.target;
   if (t instanceof HTMLInputElement && t.dataset.pick) pickSearch(t.dataset.pick, t.value);
   else if (t instanceof HTMLInputElement && t.id === 'tp-q') tpSearch(t.value);
+  else if (t instanceof HTMLInputElement && t.id === 'tp-find') { tpf.q = t.value; paintTpResults(); }
   else if (t instanceof HTMLInputElement && t.id === 'ps-range') slideScore(t.value, false);
   else if (t instanceof HTMLTextAreaElement && t.id === 'tp-note') { clearTimeout(tpNoteTimer); tpNoteTimer = setTimeout(flushTpNote, 400); }
   else if (t instanceof HTMLTextAreaElement && t.id === 'note') { clearTimeout(noteTimer); noteTimer = setTimeout(flushNote, 500); }
