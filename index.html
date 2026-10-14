@@ -2003,7 +2003,8 @@ function tpMatching() {
   const tags = themeTags();
   tpf.tags = tpf.tags.filter((t) => tags.some((x) => az(x, t) === 0));
   const q = tpQuery();
-  return S.theme.filter((it) => (tpf.type === 'all' || it.k === tpf.type) && tpf.tags.every((t) => it.tags.some((x) => az(x, t) === 0)) && (!q || findNorm(it.n).includes(q)));
+  return S.theme.filter((it) => (tpf.type === 'all' || it.k === tpf.type) && tpf.tags.every((t) => it.tags.some((x) => az(x, t) === 0)) && (!q || findNorm(it.n).includes(q)))
+    .sort((a, b) => az(a.n, b.n) || (a.y || 0) - (b.y || 0));   // always A to Z by title
 }
 /* seen titles stay hidden, except when you search for them */
 const tpShown = () => tpMatching().filter((it) => tpShowSeen || tpQuery() || !tpSeen(it));
@@ -2081,6 +2082,7 @@ function resolveShown(shown) {
 /* the profile always opens on Watching; Back from a title keeps the tab you were on */
 let profileTab = 'watching';
 store.del(LS.ptab);
+let tpFocusKey = null;
 function paintProfile() {
   const c = libCounts();
   const items = Object.keys(S.lib).map((id) => S.lib[id]).filter((e) => statusOf(e) === 'watching').sort((a, b) => b.u - a.u);
@@ -2106,6 +2108,9 @@ function paintProfile() {
     const r = $('#view-profile .tp-tags');
     if (r) r.scrollLeft = tagScroll;
     resolveShown(tpShown());
+    const row = tpFocusKey && document.querySelector('#view-profile .tp-row[data-pick="' + CSS.escape(tpFocusKey) + '"]');
+    tpFocusKey = null;
+    if (row) requestAnimationFrame(() => row.scrollIntoView({ block: 'center' }));
   }
 }
 
@@ -2266,6 +2271,7 @@ function tpAddTitle() {
   S.theme.unshift(it);
   saveTheme();
   const hidden = !tpShown().includes(it);
+  if (!hidden) tpFocusKey = it.key;   // the list is A to Z, so take her to where the new title landed
   toast('Added ' + it.n + (hidden ? '. Clear the filters to see it.' : ''));
   goBack();
 }
