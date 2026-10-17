@@ -165,6 +165,17 @@ body.has-dock .wrap { padding-bottom: calc(var(--dock-h) + 64px + env(safe-area-
 .cap-name { font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .cap-meta { font-size: 12px; line-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .card.done .poster { opacity: .32; filter: grayscale(.6); }
+/* actor page: place in the cast list or episode count on the poster; small roles fade (seen titles also go grey) */
+.card.has-role { position: relative; }
+.role-tag { position: absolute; z-index: 3; top: 6px; left: 6px; height: 24px; box-sizing: border-box; padding: 0 8px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .28); background: rgba(13, 14, 18, .8); color: #fff; font-size: 12px; font-weight: 700; line-height: 22px; white-space: nowrap; font-variant-numeric: tabular-nums; pointer-events: none; }
+.role-tag.lv3 { border-color: var(--sel); background: var(--sel); color: var(--on-sel); }
+.role-tag.lv1 { border-color: rgba(255, 255, 255, .14); color: var(--muted); }
+.card.small-role .poster { opacity: .4; }
+.card.small-role.done .poster { opacity: .25; }
+.role-hint { margin: -4px 0 16px; font-size: 12px; line-height: 17px; }
+.role-box { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 12px 12px 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, .1); background: var(--solid); font-size: 13px; line-height: 18px; color: var(--text-2); }
+.role-box span { flex: 1; min-width: 0; }
+.role-box .btn { flex: none; width: auto; min-height: 44px; padding: 0 16px; border-radius: 22px; font-size: 14px; }
 .card.done .cap-name { color: var(--muted); }
 .poster .bar { position: absolute; left: 8px; right: 8px; bottom: 7px; height: 4px; border-radius: 2px; background: rgba(0, 0, 0, .55); overflow: hidden; }
 .poster .bar i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
@@ -711,7 +722,7 @@ let metaTimer = 0;
 function slim(d) {
   return {
     id: d.id, n: d.name || d.original_name || 'Untitled', y: yearOf(d.first_air_date), e: yearOf(d.last_air_date),
-    s: Number(d.number_of_seasons) || 0, st: d.status || '', p: d.poster_path || null,
+    s: Number(d.number_of_seasons) || 0, ep: Number(d.number_of_episodes) || 0, st: d.status || '', p: d.poster_path || null,
     nw: (d.networks || []).map((x) => x.id), g: (d.genres || []).map((x) => x.id),
     k: ((d.keywords && d.keywords.results) || []).map((x) => x.id),
     t: Date.now()
@@ -728,9 +739,9 @@ function saveMetaSoon() {
     }
   }, 1500);
 }
-function getMeta(id) {
+function getMeta(id, needEp) {
   const c = metaMem.get(id);
-  if (c && Date.now() - c.t < META_TTL) return Promise.resolve(c);
+  if (c && Date.now() - c.t < META_TTL && (!needEp || c.ep !== undefined)) return Promise.resolve(c);
   if (pending.has(id)) return pending.get(id);
   const p = limit(() => tmdb('/tv/' + id, { language: 'en-US', append_to_response: 'keywords' }))
     .then((d) => { const m = slim(d); metaMem.set(id, m); saveMetaSoon(); return m; })
@@ -839,6 +850,7 @@ function tidyEntry(id) {
 
 /* ---------- people and films ---------- */
 const PERSON_TTL = 7 * 24 * 3600 * 1000;
+const CREDITS_RV = 2;   // 2: credits keep the place in the cast and the episode count
 const personMem = new Map();
 const personJobs = new Map();
 const personHints = new Map();
@@ -848,7 +860,7 @@ const filmMem = new Map();
   if (saved && typeof saved === 'object') {
     for (const id of Object.keys(S.people)) {
       const c = saved[id];
-      if (c && Array.isArray(c.items)) personMem.set(Number(id), { id: Number(id), name: S.people[id].name, p: S.people[id].p, items: c.items, t: Number(c.t) || 0 });
+      if (c && Array.isArray(c.items)) personMem.set(Number(id), { id: Number(id), name: S.people[id].name, p: S.people[id].p, items: c.items, t: Number(c.t) || 0, rv: Number(c.rv) || 0 });
     }
   }
 }
@@ -857,7 +869,7 @@ function savePeople() { if (!store.set(LS.people, S.people)) storageFull(); }
 function saveFilms() { if (!store.set(LS.films, S.films)) storageFull(); }
 function saveCredits() {
   const out = {};
-  for (const id of Object.keys(S.people)) { const r = personMem.get(Number(id)); if (r) out[id] = { t: r.t, items: r.items }; }
+  for (const id of Object.keys(S.people)) { const r = personMem.get(Number(id)); if (r) out[id] = { t: r.t, rv: r.rv, items: r.items }; }
   store.set(LS.credits, out);
 }
 /* acting credits only: released films and series, without talk shows, news or appearances as themselves */
@@ -872,11 +884,33 @@ function tidyCredits(raw) {
     if (kind === 't' && (c.genre_ids || []).some((id) => NEVER_GENRES.includes(id))) continue;
     const self = /\b(self|himself|herself|themselves)\b/i.test(c.character || '');
     const key = kind + c.id;
+    /* a person can have two credits on one title: keep the best place in the cast and the most episodes */
+    const o = !self && kind === 'm' && Number.isFinite(c.order) ? c.order + 1 : 0;
+    const ep = !self && kind === 't' ? Number(c.episode_count) || 0 : 0;
     const prev = map.get(key);
-    if (prev) { if (!self) prev.self = false; continue; }
-    map.set(key, { k: kind, id: c.id, n: (kind === 'm' ? c.title : c.name) || 'Untitled', d: date, p: c.poster_path || null, self: self });
+    if (prev) {
+      if (!self) prev.self = false;
+      if (o && (!prev.o || o < prev.o)) prev.o = o;
+      if (ep > prev.ep) prev.ep = ep;
+      continue;
+    }
+    map.set(key, { k: kind, id: c.id, n: (kind === 'm' ? c.title : c.name) || 'Untitled', d: date, p: c.poster_path || null, self: self, o: o, ep: ep });
   }
-  return [...map.values()].filter((x) => !x.self).map((x) => ({ k: x.k, id: x.id, n: x.n, d: x.d, p: x.p })).sort((a, b) => b.d.localeCompare(a.d));
+  return [...map.values()].filter((x) => !x.self).map((x) => {
+    const out = { k: x.k, id: x.id, n: x.n, d: x.d, p: x.p };
+    if (x.o) out.o = x.o;
+    if (x.ep) out.ep = x.ep;
+    return out;
+  }).sort((a, b) => b.d.localeCompare(a.d));
+}
+/* how big the part is: 3 lead, 2 supporting, 1 small, 0 not known (yet).
+   Films go by place in the cast list (#1–3, #4–10, #11 on); series by the share of episodes (half or more, 10% or more, less) */
+function roleLevel(it) {
+  if (it.k === 'm') return it.o ? (it.o <= 3 ? 3 : it.o <= 10 ? 2 : 1) : 0;
+  const m = metaMem.get(it.id);
+  if (!it.ep || !m || !m.ep) return 0;
+  const share = it.ep / m.ep;
+  return share >= 0.5 ? 3 : share >= 0.1 ? 2 : 1;
 }
 function getPerson(id, force) {
   const mem = personMem.get(id);
@@ -884,7 +918,7 @@ function getPerson(id, force) {
   if (personJobs.has(id)) return personJobs.get(id);
   const job = tmdb('/person/' + id, { language: 'en-US', append_to_response: 'combined_credits' })
     .then((d) => {
-      const rec = { id: id, name: d.name || 'Unknown', p: d.profile_path || null, items: tidyCredits((d.combined_credits || {}).cast), t: Date.now() };
+      const rec = { id: id, name: d.name || 'Unknown', p: d.profile_path || null, items: tidyCredits((d.combined_credits || {}).cast), t: Date.now(), rv: CREDITS_RV };
       personMem.set(id, rec);
       if (S.people[id]) { S.people[id].name = rec.name; S.people[id].p = rec.p; savePeople(); saveCredits(); }
       return rec;
@@ -2292,22 +2326,38 @@ const personPick = { on: false, sel: new Set() };
 function subShell(kind, id, inner) {
   return '<div class="show-top"><a class="icon-btn" href="#/" data-back aria-label="Back">' + ICON.back + '</a><a class="ext" href="https://www.themoviedb.org/' + kind + '/' + id + '" target="_blank" rel="noopener">View on TMDB</a></div>' + inner;
 }
+/* the tag on the poster: place in the film's cast list, or episodes in the series */
+function roleTagHTML(it) {
+  const lv = roleLevel(it);
+  const text = it.k === 'm' ? (it.o ? '#' + it.o : '') : (it.ep ? it.ep + ' ep' : '');
+  if (!text) return '';
+  const m = it.k === 't' ? metaMem.get(it.id) : null;
+  const what = it.k === 'm' ? 'Number ' + it.o + ' in the cast' : plural(it.ep, 'episode') + (m && m.ep ? ' of ' + m.ep : '');
+  const size = lv === 3 ? 'lead role' : lv === 2 ? 'supporting role' : lv === 1 ? 'small role' : '';
+  return '<span class="role-tag lv' + lv + '"><span aria-hidden="true">' + text + '</span><span class="sr">' + esc(what + (size ? ', ' + size : '')) + '</span></span>';
+}
 function titleCardHTML(it) {
   const y = yearOf(it.d);
   const name = '<div class="cap-name">' + esc(it.n) + '</div>';
-  if (it.k === 'm') return '<a class="card" data-key="m' + it.id + '" data-film="' + it.id + '" href="#/film/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + '<div class="cap">' + name + '<div class="cap-meta">' + y + ' · Film</div></div></a>';
+  const tag = roleTagHTML(it);
+  const cls = 'card' + (tag ? ' has-role' : '') + (roleLevel(it) === 1 ? ' small-role' : '');
+  if (it.k === 'm') return '<a class="' + cls + '" data-key="m' + it.id + '" data-film="' + it.id + '" href="#/film/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + tag + '<div class="cap">' + name + '<div class="cap-meta">' + y + ' · Film</div></div></a>';
   const m = metaMem.get(it.id);
-  return '<a class="card" data-key="t' + it.id + '" data-id="' + it.id + '" href="#/show/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + '<div class="cap">' + name + '<div class="cap-meta" data-cap="' + y + '">' + y + ' · ' + (m && m.s ? plural(m.s, 'season') : 'Series') + '</div></div></a>';
+  return '<a class="' + cls + '" data-key="t' + it.id + '" data-id="' + it.id + '" href="#/show/' + it.id + '">' + posterHTML(it.p, it.n, it.id) + tag + '<div class="cap">' + name + '<div class="cap-meta" data-cap="' + y + '">' + y + ' · ' + (m && m.s ? plural(m.s, 'season') : 'Series') + '</div></div></a>';
 }
-/* season counts are not part of an actor's credits, so they are looked up per series and filled in */
+/* season and episode counts are not part of an actor's credits, so they are looked up per series;
+   when they arrive the page is drawn again, since the episode count decides which roles are small */
+let fillTimer = 0;
 function fillSeasons(rec) {
   const token = personToken;
   for (const it of rec.items) {
-    if (it.k !== 't' || metaMem.has(it.id)) continue;
-    getMeta(it.id).then((m) => {
-      if (token !== personToken || !m.s) return;
-      const cap = document.querySelector('#person-grid .card[data-id="' + it.id + '"] [data-cap]');
-      if (cap) cap.textContent = cap.dataset.cap + ' · ' + plural(m.s, 'season');
+    if (it.k !== 't') continue;
+    const have = metaMem.get(it.id);
+    if (have && have.ep !== undefined) continue;
+    getMeta(it.id, true).then(() => {
+      if (token !== personToken || current !== 'person' || !personNow || personNow.id !== rec.id) return;
+      clearTimeout(fillTimer);
+      fillTimer = setTimeout(() => { if (token === personToken && current === 'person' && personNow && personNow.id === rec.id) paintPerson(personNow); }, 150);
     }).catch(() => {});
   }
 }
@@ -2322,7 +2372,7 @@ async function openPerson(id, back) {
     paintPerson(rec);
     const y = back && scrollMem['#/person/' + id] ? scrollMem['#/person/' + id] : 0;
     requestAnimationFrame(() => window.scrollTo(0, y));
-    if (Date.now() - rec.t > PERSON_TTL) getPerson(id, true).then((r) => { if (token === personToken && current === 'person') { personNow = r; paintPerson(r); } }).catch(() => {});
+    if (Date.now() - rec.t > PERSON_TTL || rec.rv !== CREDITS_RV) getPerson(id, true).then((r) => { if (token === personToken && current === 'person') { personNow = r; paintPerson(r); } }).catch(() => {});
     return;
   }
   const hint = S.people[id] || personHints.get(id);
@@ -2343,12 +2393,14 @@ function paintPerson(rec) {
   const hid = hiddenKeys(rec.id);
   const items = rec.items.filter((it) => !hid.has(it.k + it.id));
   const removed = rec.items.filter((it) => hid.has(it.k + it.id));
+  const small = items.filter((it) => roleLevel(it) === 1);
   let f = personFilter[rec.id] || 'all';
   if (f === 'hidden' && !removed.length) f = personFilter[rec.id] = 'all';
+  if (f === 'small' && !small.length) f = personFilter[rec.id] = 'all';
   const total = items.length;
   const films = items.filter((it) => it.k === 'm').length;
   const seen = items.filter(seenItem).length;
-  const shown = f === 'hidden' ? removed : items.filter((it) => f === 'all' || (f === 'films' ? it.k === 'm' : it.k === 't'));
+  const shown = f === 'hidden' ? removed : f === 'small' ? small : items.filter((it) => f === 'all' || (f === 'films' ? it.k === 'm' : it.k === 't'));
   const following = !!S.people[rec.id];
   if (!following || !shown.length) { personPick.on = false; personPick.sel.clear(); }
   const picking = personPick.on;
@@ -2358,9 +2410,18 @@ function paintPerson(rec) {
     (following && shown.length ? '<button type="button" class="want" id="pick-toggle" aria-pressed="' + picking + '">' + (picking ? 'Cancel' : 'Select') + '</button>' : '') + '</div></div></div>';
   html += '<div class="progress"><div class="progress-row"><b>Seen</b><span>' + seen + ' of ' + plural(total, 'title') + '</span></div><div class="track"><i style="width:' + (total ? Math.round((seen / total) * 100) : 0) + '%"></i></div></div>';
   const chips = [['all', 'All'], ['films', 'Films'], ['series', 'Series']];
+  if (small.length) chips.push(['small', 'Small roles ' + small.length]);
   if (removed.length) chips.push(['hidden', 'Removed ' + removed.length]);
   html += '<div class="pchips">' + chips.map((c) => '<button type="button" class="chip" data-pf="' + c[0] + '" aria-pressed="' + (f === c[0]) + '">' + c[1] + '</button>').join('') + '</div>';
   if (picking) html += '<p class="note" style="margin-bottom:16px">' + (f === 'hidden' ? 'Tap the titles you want back on this list.' : 'Tap the titles you want off this list. They stop counting here, and you can bring them back under Removed.') + '</p>';
+  else if (f === 'small') {
+    html += '<div class="role-box"><span>Small roles: #11 or lower in a film, or in under 10% of a series’ episodes.' + (following ? '' : ' Follow this person to remove them from the list.') + '</span>' +
+      (following ? '<button type="button" class="btn" data-act="remove-small">' + (small.length === 1 ? 'Remove it' : 'Remove all ' + small.length) + '</button>' : '') + '</div>';
+  } else if (f === 'hidden') {
+    html += '<div class="role-box"><span>Removed titles stop counting on this page.</span><button type="button" class="btn" data-act="restore-all">Bring all back</button></div>';
+  } else if (shown.some((it) => it.o || it.ep)) {
+    html += '<p class="note role-hint">The tag on each poster is their place in the film’s cast list, or how many episodes they’re in. Small roles fade out.</p>';
+  }
   html += shown.length
     ? '<div class="grid' + (picking ? ' picking' : '') + '" id="person-grid">' + shown.map(titleCardHTML).join('') + '</div>'
     : '<div class="state"><strong>Nothing here</strong><p>' + (rec.items.length ? 'No ' + (f === 'films' ? 'films' : f === 'series' ? 'series' : 'titles') + ' on this list.' : 'TMDB lists no released films or series for this person.') + '</p></div>';
@@ -2835,6 +2896,18 @@ document.addEventListener('click', (ev) => {
     else if (act === 'reload-person') openPerson(Number(el.dataset.id));
     else if (act === 'pick-cancel' && personNow) { personPick.on = false; personPick.sel.clear(); paintPerson(personNow); }
     else if (act === 'pick-apply') applyPick();
+    else if ((act === 'remove-small' || act === 'restore-all') && personNow && S.people[personNow.id]) {
+      const person = S.people[personNow.id];
+      const hide = new Set(person.hide || []);
+      let keys;
+      if (act === 'remove-small') { keys = itemsFor(personNow).filter((it) => roleLevel(it) === 1).map((it) => it.k + it.id); keys.forEach((k) => hide.add(k)); }
+      else { keys = [...hide]; hide.clear(); }
+      person.hide = [...hide];
+      savePeople();
+      personFilter[personNow.id] = 'all';
+      paintPerson(personNow);
+      toast(plural(keys.length, 'title') + (act === 'remove-small' ? ' removed from this list' : ' back on this list'));
+    }
     else if (act === 'reload-film') openFilm(Number(el.dataset.id));
     else if (act === 'filters-reset') { draft = clone(DEFAULT_FILTERS); paintFilters(); }
     else if (act === 'filters-apply') {
